@@ -22,6 +22,8 @@ constant BIT_SAMPLE_COUNTER_MAX : integer := 3;
 signal BIT_SAMPLE_COUNTER : integer range 0 to BIT_SAMPLE_COUNTER_MAX;
 constant BIT_NUMBER_COUNTER_MAX : integer := 336;
 signal BIT_NUMBER_COUNTER : integer range 0 to BIT_NUMBER_COUNTER_MAX;
+signal RX_SYNCED : std_logic;
+signal RX_SYNCER : std_logic;
 
 begin
     FRAME_VALID_OUT <= LOCKED;
@@ -35,8 +37,12 @@ begin
             BIT_NUMBER_COUNTER <= 0;
             SERIAL_CLOCK_OUT <= '0';
             SERIAL_DATA_OUT <= '0';
+            RX_SYNCED <= '0';
+            RX_SYNCER <= '0';
         elsif rising_edge(CLK_27_750) then
             RX_SHIFT_REGISTER <= RX_SHIFT_REGISTER(RX_SHIFT_REGISTER'left - 1 downto 0) & RX_IN;
+            RX_SYNCED <= RX_SYNCER;
+            RX_SYNCER <= RX_IN;
             if LOCKED = '0' then
                 if std_match(RX_SHIFT_REGISTER, RUN_IN) then
                     LOCKED <= '1';
@@ -48,7 +54,7 @@ begin
                     if BIT_SAMPLE_COUNTER < BIT_SAMPLE_COUNTER_MAX then
                         BIT_SAMPLE_COUNTER <= BIT_SAMPLE_COUNTER + 1;
                         if BIT_SAMPLE_COUNTER = 2 then
-                            SERIAL_DATA_OUT <= RX_IN;
+                            SERIAL_DATA_OUT <= RX_SYNCED;
                             SERIAL_CLOCK_OUT <= '1';
                         end if;
                     else

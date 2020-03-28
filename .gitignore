@@ -1,3 +1,11 @@
 /vunit_out
 /implement/db
 /implement/incremental_db
+/implement/simulation
+/implement/output_files/*.rpt
+/implement/output_files/*.done
+/implement/output_files/*.smsg
+/implement/output_files/*.summary
+/implement/output_files/*.jdi
+/implement/output_files/*.pin
+/implement/output_files/*.sld
