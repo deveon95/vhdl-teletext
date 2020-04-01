@@ -35,7 +35,10 @@ begin
     --when "---0" =>
         -- ABC not all correct and D not correct = Single error / Error bit identification required
     DATA_OUT <= (D4 & D3 & D2 & D1) when (A AND B AND C) else
-                (D4 XOR ((NOT A) AND (NOT B) AND C)) & (D3 XOR ((NOT A) AND B AND (NOT C))) & (D2 XOR (A AND (NOT B) AND (NOT C))) & (D1 XOR ((NOT A) AND (NOT B) AND (NOT C))) when (NOT D) else "0000";
+                (D4 XOR ((NOT A) AND (NOT B) AND C)) &
+                (D3 XOR ((NOT A) AND B AND (NOT C))) &
+                (D2 XOR (A AND (NOT B) AND (NOT C))) &
+                (D1 XOR ((NOT A) AND (NOT B) AND (NOT C))) when (NOT D) else "0000";
                 
     DATA_VALID_OUT <=  (A AND B AND C) OR (NOT D);
         
