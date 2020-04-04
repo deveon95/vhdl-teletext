@@ -45,13 +45,13 @@ begin
     E <= P5 XOR D12 XOR D13 XOR D14 XOR D15 XOR D16 XOR D17 XOR D18;
     F <= P1 XOR P2 XOR D1 XOR P3 XOR D2 XOR D3 XOR D4 XOR P4 XOR D5 XOR D6 XOR D7 XOR D8 XOR D9 XOR D10 XOR D11 XOR P5 XOR D12 XOR D13 XOR D14 XOR D15 XOR D16 XOR D17 XOR D18 XOR P6;
     
-    --when "1111-" =>
+    --when "11111-" =>
         -- All correct = No errors / Accept data bits
-        -- ABCD correct and E incorrect = Error in P4 / Accept data bits
-    --when "----1" => 
-        -- ABCD not all correct and E correct = Double error / Reject data bits
-    --when "----0" =>
-        -- ABCD not all correct and E not correct = Single error / Error bit identification required
+        -- ABCDE correct and F incorrect = Error in P4 / Accept data bits
+    --when "-----1" => 
+        -- ABCDE not all correct and F correct = Double error / Reject data bits
+    --when "-----0" =>
+        -- ABCDE not all correct and F not correct = Single error / Error bit identification required
     
     DATA_OUT <= (D18 & D17 & D16 & D15 & D14 & D13 & D12 & D11 & D10 & D9 & D8 & D7 & D6 & D5 & D4 & D3 & D2 & D1) when (A AND B AND C AND D AND E) else
                 (D18 XOR ((NOT A) AND (NOT B) AND (NOT C) AND      D  AND (NOT E))) &

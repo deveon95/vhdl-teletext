@@ -40,7 +40,7 @@ UUT: entity work.HAMMING2418_DECODER
             wait until rising_edge(CLK_27_750);
             wait until rising_edge(CLK_27_750);
             wait until rising_edge(CLK_27_750);
-            -- All test data MSB first, so bit order is D4,P4,D3,P3,D2,P2,D1,P1 for encoded data and D4,D3,D2,D1 for decoded data
+            -- All test data MSB first
             if run("T001_VALID") then
                 ENCODED_DATA <= "111111110111111101110100";
                 EXPECTED_DECODED_DATA <= "111111111111111111";
