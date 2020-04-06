@@ -33,14 +33,8 @@ signal G : std_logic;
 signal B : std_logic;
 signal NEW_ROW : std_logic;
 signal NEW_SCREEN : std_logic;
-signal PIXEL_COUNTER : integer range 0 to 767;
-signal ROW_COUNTER : integer range 0 to 575;
-signal H_DOUBLER : std_logic;
-signal V_DOUBLER : std_logic;
-signal CHAR_COUNTER : integer range 0 to 127;
-signal CHAR_COL_COUNTER : integer range 0 to 5;
-signal CHAR_ROW_COUNTER : integer range 0 to 10;
-signal CGROM_LINE : std_logic_vector(4 downto 0);
+signal DPR_READ_DATA : std_logic_vector(6 downto 0);
+signal DPR_READ_ADDRESS : std_logic_vector(9 downto 0);
 begin
 
     CLK_REPEATER <= CLK_27_750;
@@ -72,123 +66,20 @@ VGA: entity work.VGA
     HSYNC_OUT => HSYNC_OUT,
     VSYNC_OUT => VSYNC_OUT);
 
-CGROM: entity work.CGROM
+DISPLAY_GENERATOR: entity work.DISPLAY_GENERATOR
     port map(
-    ADDRESS_IN => std_logic_vector(to_unsigned(CHAR_COUNTER,7)),
-    ROW_SELECT_IN => std_logic_vector(to_unsigned(CHAR_ROW_COUNTER,4)),
-    DATA_OUT => CGROM_LINE);
-
-PATTERN_GEN: process(CLK_25, RESET)
-    begin
-        if RESET = '1' then
-            R <= '0';
-            G <= '0';
-            B <= '0';
-            PIXEL_COUNTER <= 0;
-            ROW_COUNTER <= 0;
-            H_DOUBLER <= '0';
-            V_DOUBLER <= '0';
-            CHAR_COUNTER <= 0;
-            CHAR_COL_COUNTER <= 0;
-            CHAR_ROW_COUNTER <= 0;
-        elsif rising_edge(CLK_25) then
-            if NEW_SCREEN = '1' then
-                ROW_COUNTER <= 0;
-                CHAR_COUNTER <= 0;
-                CHAR_ROW_COUNTER <= 0;
-                CHAR_COL_COUNTER <= 0;
-                H_DOUBLER <= '0';
-                V_DOUBLER <= '0';
-            else
-                if NEW_ROW = '1' then
-                    PIXEL_COUNTER <= 0;
-                    if ROW_COUNTER < 575 then
-                        ROW_COUNTER <= ROW_COUNTER + 1;
-                        if ROW_COUNTER >= 144 or ROW_COUNTER < 432 then
-                            V_DOUBLER <= NOT V_DOUBLER;
-                            if V_DOUBLER = '1' then
-                                if CHAR_ROW_COUNTER < 10 then
-                                    CHAR_ROW_COUNTER <= CHAR_ROW_COUNTER + 1;
-                                else
-                                    -- proceed to next part of character set
-                                    CHAR_COUNTER <= CHAR_COUNTER + 40;
-                                    CHAR_ROW_COUNTER <= 0;
-                                    R <= '0';
-                                    G <= '0';
-                                    B <= '0';
-                                end if;
-                            end if;
-                        end if;
-                    end if;
-                else
-                    if PIXEL_COUNTER < 767 then
-                        PIXEL_COUNTER <= PIXEL_COUNTER + 1;
-                    end if;
-                    if ROW_COUNTER < 144 or ROW_COUNTER >= 432 then
-                        if PIXEL_COUNTER < 96 then
-                            R <= '1';
-                            G <= '0';
-                            B <= '0';
-                        elsif PIXEL_COUNTER < 192 then
-                            R <= '0';
-                            G <= '1';
-                            B <= '0';
-                        elsif PIXEL_COUNTER < 288 then
-                            R <= '1';
-                            G <= '1';
-                            B <= '0';
-                        elsif PIXEL_COUNTER < 384 then
-                            R <= '0';
-                            G <= '0';
-                            B <= '1';
-                        elsif PIXEL_COUNTER < 480 then
-                            R <= '1';
-                            G <= '0';
-                            B <= '1';
-                        elsif PIXEL_COUNTER < 576 then
-                            R <= '0';
-                            G <= '1';
-                            B <= '1';
-                        elsif PIXEL_COUNTER < 672 then
-                            R <= '1';
-                            G <= '1';
-                            B <= '1';
-                        elsif PIXEL_COUNTER < 767 then
-                            R <= '0';
-                            G <= '0';
-                            B <= '0';
-                        else
-                            -- Generate vertical white line at right edge of screen
-                            R <= '1';
-                            G <= '1';
-                            B <= '1';
-                        end if;
-                    else
-                        H_DOUBLER <= not H_DOUBLER;
-                        if H_DOUBLER = '1' and PIXEL_COUNTER >= 144 and PIXEL_COUNTER < 624 then
-                            if CHAR_COL_COUNTER < 5 then
-                                CHAR_COL_COUNTER <= CHAR_COL_COUNTER + 1;
-                                R <= CGROM_LINE(4 - CHAR_COL_COUNTER);
-                                G <= CGROM_LINE(4 - CHAR_COL_COUNTER);
-                                B <= CGROM_LINE(4 - CHAR_COL_COUNTER);
-                            else
-                                CHAR_COL_COUNTER <= 0;
-                                R <= '0';
-                                G <= '0';
-                                B <= '0';
-                                CHAR_COUNTER <= CHAR_COUNTER + 1;
-                            end if;
-                        elsif PIXEL_COUNTER = 624 then
-                            -- Need to subtract 40 because we've only printed one row of pixels
-                            -- and need to print from the same characters again
-                            CHAR_COUNTER <= CHAR_COUNTER - 40;
-                            H_DOUBLER <= '0';
-                        end if;
-                    end if;
-                end if;
-            end if;
-        end if;
-    end process;
+    RESET => RESET,
+    CLK => CLK_25,
+    
+    MEMORY_DATA_IN => DPR_READ_DATA,
+    MEMORY_ADDRESS_OUT => DPR_READ_ADDRESS,
+    
+    NEW_ROW_IN => NEW_ROW,
+    NEW_SCREEN_IN => NEW_SCREEN,
+    
+    R_OUT => R,
+    G_OUT => G,
+    B_OUT => B);
 
 end architecture;
     
