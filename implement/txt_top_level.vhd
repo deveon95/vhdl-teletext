@@ -81,5 +81,15 @@ DISPLAY_GENERATOR: entity work.DISPLAY_GENERATOR
     G_OUT => G,
     B_OUT => B);
 
+DUAL_PORT_RAM: entity work.DPR_IP_VARIATION
+    port map(
+    data => "0000000",
+    rdaddress => DPR_READ_ADDRESS,
+    rdclock => CLK_25,
+    wraddress => "0000000000",
+    wrclock => CLK_27_750,
+    wren => '0',
+    q => DPR_READ_DATA);
+
 end architecture;
     
