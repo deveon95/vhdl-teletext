@@ -40,7 +40,7 @@ begin
             RX_SYNCED <= '0';
             RX_SYNCER <= '0';
         elsif rising_edge(CLK_27_750) then
-            RX_SHIFT_REGISTER <= RX_SHIFT_REGISTER(RX_SHIFT_REGISTER'left - 1 downto 0) & RX_IN;
+            RX_SHIFT_REGISTER <= RX_SHIFT_REGISTER(RX_SHIFT_REGISTER'left - 1 downto 0) & RX_SYNCED;
             RX_SYNCED <= RX_SYNCER;
             RX_SYNCER <= RX_IN;
             if LOCKED = '0' then
@@ -53,7 +53,7 @@ begin
                 if BIT_NUMBER_COUNTER < BIT_NUMBER_COUNTER_MAX then
                     if BIT_SAMPLE_COUNTER < BIT_SAMPLE_COUNTER_MAX then
                         BIT_SAMPLE_COUNTER <= BIT_SAMPLE_COUNTER + 1;
-                        if BIT_SAMPLE_COUNTER = 2 then
+                        if BIT_SAMPLE_COUNTER = 1 then
                             SERIAL_DATA_OUT <= RX_SYNCED;
                             SERIAL_CLOCK_OUT <= '1';
                         end if;
@@ -63,6 +63,7 @@ begin
                         SERIAL_CLOCK_OUT <= '0';
                     end if;
                 else
+                    BIT_SAMPLE_COUNTER <= 0;
                     BIT_NUMBER_COUNTER <= 0;
                     LOCKED <= '0';
                 end if;

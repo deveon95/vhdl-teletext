@@ -53,7 +53,7 @@ begin
     --when "-----0" =>
         -- ABCDE not all correct and F not correct = Single error / Error bit identification required
     
-    DATA_OUT <= (D18 & D17 & D16 & D15 & D14 & D13 & D12 & D11 & D10 & D9 & D8 & D7 & D6 & D5 & D4 & D3 & D2 & D1) when (A AND B AND C AND D AND E) else
+    DATA_OUT <= (D18 & D17 & D16 & D15 & D14 & D13 & D12 & D11 & D10 & D9 & D8 & D7 & D6 & D5 & D4 & D3 & D2 & D1) when (A AND B AND C AND D AND E) = '1' else
                 (D18 XOR ((NOT A) AND (NOT B) AND (NOT C) AND      D  AND (NOT E))) &
                 (D17 XOR (     A  AND (NOT B) AND (NOT C) AND      D  AND (NOT E))) &
                 (D16 XOR ((NOT A) AND      B  AND (NOT C) AND      D  AND (NOT E))) &
@@ -71,7 +71,7 @@ begin
                 (D4  XOR ((NOT A) AND (NOT B) AND (NOT C) AND      D  AND      E)) &
                 (D3  XOR (     A  AND (NOT B) AND (NOT C) AND      D  AND      E)) &
                 (D2  XOR ((NOT A) AND      B  AND (NOT C) AND      D  AND      E)) &
-                (D1  XOR ((NOT A) AND (NOT B) AND      C  AND      D  AND      E)) when (NOT F)
+                (D1  XOR ((NOT A) AND (NOT B) AND      C  AND      D  AND      E)) when (F = '0')
                 else "000000000000000000";
     
     DATA_VALID_OUT <=  (A AND B AND C AND D AND E) OR (NOT F);

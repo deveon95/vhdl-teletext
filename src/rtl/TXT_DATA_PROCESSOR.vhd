@@ -103,7 +103,7 @@ MAIN: process(CLK_27_750, RESET)
                         HAMMING84_ENCODED <= BYTE_IN;
                     elsif BYTE_CLOCK_DELAYED_2 = '1' then
                         CURRENT_MAGAZINE <= HAMMING84_DECODED(2 downto 0);
-                        CURRENT_LINE(4) <= HAMMING84_DECODED(3);
+                        CURRENT_LINE(0) <= HAMMING84_DECODED(3);
                         CURRENT_MAGROW_PARITY <= HAMMING84_VALID;
                         RX_BYTE <= MAGROW2;
                     end if;
@@ -112,7 +112,7 @@ MAIN: process(CLK_27_750, RESET)
                     if BYTE_CLOCK_IN = '1' then
                         HAMMING84_ENCODED <= BYTE_IN;
                     elsif BYTE_CLOCK_DELAYED = '1' then
-                        CURRENT_LINE(3 downto 0) <= HAMMING84_DECODED;
+                        CURRENT_LINE(4 downto 1) <= HAMMING84_DECODED;
                         CURRENT_MAGROW_PARITY <= CURRENT_MAGROW_PARITY and HAMMING84_VALID;
                     elsif BYTE_CLOCK_DELAYED_2 = '1' then
                         if CURRENT_MAGROW_PARITY = '0' then

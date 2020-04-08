@@ -34,11 +34,11 @@ begin
         -- ABC not all correct and D correct = Double error / Reject data bits
     --when "---0" =>
         -- ABC not all correct and D not correct = Single error / Error bit identification required
-    DATA_OUT <= (D4 & D3 & D2 & D1) when (A AND B AND C) else
+    DATA_OUT <= (D4 & D3 & D2 & D1) when (A AND B AND C) = '1' else
                 (D4 XOR ((NOT A) AND (NOT B) AND C)) &
                 (D3 XOR ((NOT A) AND B AND (NOT C))) &
                 (D2 XOR (A AND (NOT B) AND (NOT C))) &
-                (D1 XOR ((NOT A) AND (NOT B) AND (NOT C))) when (NOT D) else "0000";
+                (D1 XOR ((NOT A) AND (NOT B) AND (NOT C))) when (D = '0') else "0000";
                 
     DATA_VALID_OUT <=  (A AND B AND C) OR (NOT D);
         
