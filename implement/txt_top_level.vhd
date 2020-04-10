@@ -1,5 +1,5 @@
--- ********** Use Clock Controller to set the CLK1 (not CLK2) freq to 27750 on C10 Dev Board **
--- ********** Use Clock Controller to set CLK2 to 28800
+-- ********** Use Clock Controller to set CLK1 to 27750 on C10 Dev Board **
+-- ********** Use Clock Controller to set CLK2 to 27300
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -15,6 +15,10 @@ entity TXT_TOP_LEVEL is
     RESET_REPEATER  : out std_logic;
     RX_IN           : in  std_logic;
     
+    REVEAL_IN : in std_logic;
+    PAGE_UP : in std_logic;
+    PAGE_DOWN : in std_logic;
+    
     R_OUT : out std_logic;
     G_OUT : out std_logic;
     B_OUT : out std_logic;
@@ -24,6 +28,11 @@ entity TXT_TOP_LEVEL is
 end entity TXT_TOP_LEVEL;
 
 architecture rtl of TXT_TOP_LEVEL is
+signal PAGE_NUMBER : integer range 0 to 2047;
+constant BUTTON_DELAY_COUNTER_MAX : integer := 2775000;
+signal BUTTON_DELAY_COUNTER : integer range 0 to BUTTON_DELAY_COUNTER_MAX;   --10 increments per second
+signal PAGE_UP_SYNC, PAGE_UP_SYNC_2, PAGE_DOWN_SYNC, PAGE_DOWN_SYNC_2 : std_logic;
+
 signal RESET : std_logic;
 signal SERIAL_DATA : std_logic;
 signal SERIAL_CLOCK : std_logic;
@@ -56,6 +65,52 @@ begin
     CLK_REPEATER2 <= CLK_27_750;
     RESET <= not RESETn;
     RESET_REPEATER <= RESETn;
+    
+-- A very simple page number entry system for testing
+PAGE_NUMBER_CONTROLLER: process(CLK_27_750, RESET)
+    begin
+        if RESET = '1' then
+            PAGE_NUMBER <= 1938;
+            PAGE_UP_SYNC <= '0';
+            PAGE_UP_SYNC_2 <= '0';
+            PAGE_DOWN_SYNC <= '0';
+            PAGE_DOWN_SYNC_2 <= '0';
+        elsif rising_edge(CLK_27_750) then
+            PAGE_UP_SYNC <= not PAGE_UP;
+            PAGE_UP_SYNC_2 <= PAGE_UP_SYNC;
+            PAGE_DOWN_SYNC <= not PAGE_DOWN;
+            PAGE_DOWN_SYNC_2 <= PAGE_DOWN_SYNC;
+            if PAGE_UP_SYNC_2 = '1' then
+                if BUTTON_DELAY_COUNTER = BUTTON_DELAY_COUNTER_MAX / 2 then
+                    if PAGE_NUMBER > 0 then
+                        PAGE_NUMBER <= PAGE_NUMBER - 1;
+                    else
+                        PAGE_NUMBER <= 2047;
+                    end if;
+                end if;
+                if BUTTON_DELAY_COUNTER < BUTTON_DELAY_COUNTER_MAX then
+                    BUTTON_DELAY_COUNTER <= BUTTON_DELAY_COUNTER + 1;
+                else
+                    BUTTON_DELAY_COUNTER <= 0;
+                end if;
+            elsif PAGE_DOWN_SYNC_2 = '1' then
+                if BUTTON_DELAY_COUNTER = BUTTON_DELAY_COUNTER_MAX / 2 then
+                    if PAGE_NUMBER < 2047 then
+                        PAGE_NUMBER <= PAGE_NUMBER + 1;
+                    else
+                        PAGE_NUMBER <= 0;
+                    end if;
+                end if;
+                if BUTTON_DELAY_COUNTER < BUTTON_DELAY_COUNTER_MAX then
+                    BUTTON_DELAY_COUNTER <= BUTTON_DELAY_COUNTER + 1;
+                else
+                    BUTTON_DELAY_COUNTER <= 0;
+                end if;
+            else
+                BUTTON_DELAY_COUNTER <= 0;
+            end if;
+        end if;
+    end process;
 
 DATA_RECOVERY: entity work.TXT_DATA_RECOVERY
     port map(
@@ -105,6 +160,7 @@ MEMORY_CONTROLLER: entity work.TXT_MEMORY_CONTROLLER
     WORD_IN => WORD_DATA,
     WORD_CLOCK_IN => WORD_CLOCK,
     FRAME_VALID_IN => WORD_FRAME_VALID,
+    UPCOMING_FRAME_IN => BYTE_FRAME_VALID,
     
     MAGAZINE_IN => MAGAZINE,
     ROW_IN => ROW,
@@ -116,8 +172,8 @@ MEMORY_CONTROLLER: entity work.TXT_MEMORY_CONTROLLER
     MEM_ADDRESS_OUT => DPR_WRITE_ADDRESS,
     MEM_WREN_OUT => DPR_WRITE_EN,
     
-    REQ_MAGAZINE_IN => "001",
-    REQ_PAGE_IN => "01010010",
+    REQ_MAGAZINE_IN => std_logic_vector(to_unsigned(PAGE_NUMBER, 11))(10 downto 8),
+    REQ_PAGE_IN => std_logic_vector(to_unsigned(PAGE_NUMBER, 11))(7 downto 0),
     REQ_SUBCODE_IN => "0000000000000",
     REQ_SUBCODE_SPEC_IN => '0'
     );
@@ -139,6 +195,8 @@ DISPLAY_GENERATOR: entity work.DISPLAY_GENERATOR
     
     MEMORY_DATA_IN => DPR_READ_DATA,
     MEMORY_ADDRESS_OUT => DPR_READ_ADDRESS,
+    
+    REVEAL_IN => not REVEAL_IN,
     
     NEW_ROW_IN => NEW_ROW,
     NEW_SCREEN_IN => NEW_SCREEN,

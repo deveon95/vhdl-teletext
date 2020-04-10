@@ -7,6 +7,8 @@ port (
     CLK : in std_logic;
     RESET : in std_logic;
     
+    REVEAL_IN : in std_logic;
+    
     MEMORY_DATA_IN : in std_logic_vector(6 downto 0);
     MEMORY_ADDRESS_OUT : out std_logic_vector(9 downto 0);
     
@@ -21,7 +23,9 @@ end entity DISPLAY_GENERATOR;
 
 architecture RTL of DISPLAY_GENERATOR is
 
-signal PIXEL_COUNTER : integer range 0 to 767;
+constant FLASH_DURATION : integer := 25000000;
+
+signal PIXEL_COUNTER : integer range 0 to 719;
 signal ROW_COUNTER : integer range 0 to 575;
 signal H_DOUBLER : std_logic;
 signal V_DOUBLER : std_logic;
@@ -44,6 +48,10 @@ signal NEXT_FG_B : std_logic;
 signal BG_R, BG_R_D : std_logic;
 signal BG_G, BG_G_D : std_logic;
 signal BG_B, BG_B_D : std_logic;
+signal CONCEAL : std_logic;
+signal FLASH : std_logic;
+signal FLASH_TIMER : integer range 0 to FLASH_DURATION;
+signal FLASH_TIMER_PULSE : std_logic;
 signal MOSAIC_ENABLE : std_logic;
 signal MOSAIC_HOLD : std_logic;
 signal CONTIGUOUS : std_logic;
@@ -51,6 +59,7 @@ signal MOSAIC : std_logic_vector(5 downto 0);
 signal MOSAIC_PIXEL, LAST_MOSAIC_PIXEL : std_logic;
 signal LAST_MOSAIC : std_logic_vector(5 downto 0);
 signal CURRENT_PIXEL : std_logic;
+signal DISP_ATTRIBUTE : std_logic;
 
 constant BLANK_CHAR : std_logic_vector(6 downto 0) := "0100000";
 begin
@@ -73,18 +82,20 @@ CGROM: entity work.CGROM
     MOSAIC(3) <= CHAR_TO_DISPLAY(3);
     MOSAIC(4) <= CHAR_TO_DISPLAY(4);
     MOSAIC(5) <= CHAR_TO_DISPLAY(6);
-    MOSAIC_PIXEL <= MOSAIC(0) when CHAR_COL_COUNTER_D < 3 and CHAR_ROW_COUNTER < 3 else
+    MOSAIC_PIXEL <= '0' when CONTIGUOUS = '0' and (CHAR_COL_COUNTER_D = 0 or CHAR_COL_COUNTER_D = 3 or CHAR_ROW_COUNTER = 0 or CHAR_ROW_COUNTER = 3 or CHAR_ROW_COUNTER = 7 or CHAR_ROW_COUNTER = 10) else
+                    MOSAIC(0) when CHAR_COL_COUNTER_D < 3 and CHAR_ROW_COUNTER < 3 else
                     MOSAIC(1) when CHAR_COL_COUNTER_D >= 3 and CHAR_ROW_COUNTER < 3 else
                     MOSAIC(2) when CHAR_COL_COUNTER_D < 3 and CHAR_ROW_COUNTER < 7 else
                     MOSAIC(3) when CHAR_COL_COUNTER_D >= 3 and CHAR_ROW_COUNTER < 7 else
-                    MOSAIC(4) when CHAR_COL_COUNTER_D < 3 else
-                    MOSAIC(5);
-    LAST_MOSAIC_PIXEL <= LAST_MOSAIC(0) when CHAR_COL_COUNTER_D < 3 and CHAR_ROW_COUNTER < 3 else
+                    MOSAIC(4) when CHAR_COL_COUNTER_D < 3 and CHAR_ROW_COUNTER < 11 else
+                    MOSAIC(5) when CHAR_COL_COUNTER_D >= 3 and CHAR_ROW_COUNTER < 11 else '0';
+    LAST_MOSAIC_PIXEL <= '0' when CONTIGUOUS = '0' and (CHAR_COL_COUNTER_D = 0 or CHAR_COL_COUNTER_D = 3 or CHAR_ROW_COUNTER = 0 or CHAR_ROW_COUNTER = 3 or CHAR_ROW_COUNTER = 7 or CHAR_ROW_COUNTER = 10) else
+                    LAST_MOSAIC(0) when CHAR_COL_COUNTER_D < 3 and CHAR_ROW_COUNTER < 3 else
                     LAST_MOSAIC(1) when CHAR_COL_COUNTER_D >= 3 and CHAR_ROW_COUNTER < 3 else
                     LAST_MOSAIC(2) when CHAR_COL_COUNTER_D < 3 and CHAR_ROW_COUNTER < 7 else
                     LAST_MOSAIC(3) when CHAR_COL_COUNTER_D >= 3 and CHAR_ROW_COUNTER < 7 else
-                    LAST_MOSAIC(4) when CHAR_COL_COUNTER_D < 3 else
-                    LAST_MOSAIC(5);
+                    LAST_MOSAIC(4) when CHAR_COL_COUNTER_D < 3 and CHAR_ROW_COUNTER < 11 else
+                    LAST_MOSAIC(5) when CHAR_COL_COUNTER_D >= 3 and CHAR_ROW_COUNTER < 11 else '0';
                     
 ACTIVE_AREA_CONTROLLER: process(CLK, RESET)
     begin
@@ -111,15 +122,15 @@ ACTIVE_AREA_CONTROLLER: process(CLK, RESET)
                         V_DOUBLER <= '0';
                     end if;
                 else
-                    if PIXEL_COUNTER < 767 then
+                    if PIXEL_COUNTER < 719 then
                         PIXEL_COUNTER <= PIXEL_COUNTER + 1;
                     end if;
-                    if ROW_COUNTER >= 16 and ROW_COUNTER < 563 and PIXEL_COUNTER >= 144 and PIXEL_COUNTER < 624 then
+                    if ROW_COUNTER >= 16 and ROW_COUNTER < 563 and PIXEL_COUNTER >= 120 and PIXEL_COUNTER < 600 then
                         H_DOUBLER <= not H_DOUBLER;
                     else
                         H_DOUBLER <= '0';
                     end if;
-                    if ROW_COUNTER >= 16 and ROW_COUNTER < 563 and PIXEL_COUNTER = 624 then
+                    if ROW_COUNTER >= 16 and ROW_COUNTER < 563 and PIXEL_COUNTER = 600 then
                         END_OF_ROW <= '1';
                     else
                         END_OF_ROW <= '0';
@@ -158,7 +169,10 @@ DISPLAY_GEN: process(CLK, RESET)
             CHAR_TO_DISPLAY <= (others => '0');
             MOSAIC_ENABLE <= '0';
             MOSAIC_HOLD <= '0';
-            CONTIGUOUS <= '0';
+            CONCEAL <= '0';
+            FLASH <= '0';
+            FLASH_TIMER <= 0;
+            CONTIGUOUS <= '1';
             LAST_MOSAIC <= (others => '0');
             NEXT_H_PIXEL_D <= '0';
         elsif rising_edge(CLK) then
@@ -170,6 +184,12 @@ DISPLAY_GEN: process(CLK, RESET)
             BG_R_D <= BG_R;
             BG_G_D <= BG_G;
             BG_B_D <= BG_B;
+            
+            if FLASH_TIMER < FLASH_DURATION then
+                FLASH_TIMER <= FLASH_TIMER + 1;
+            else
+                FLASH_TIMER <= 0;
+            end if;
             
             if NEW_SCREEN_IN = '1' then
                 CHAR_COUNTER <= 0;
@@ -194,7 +214,9 @@ DISPLAY_GEN: process(CLK, RESET)
                 BG_B <= '0';
                 MOSAIC_ENABLE <= '0';
                 MOSAIC_HOLD <= '0';
-                CONTIGUOUS <= '0';
+                CONCEAL <= '0';
+                FLASH <= '0';
+                CONTIGUOUS <= '1';
                 LAST_MOSAIC <= (others => '0');
             end if;
             
@@ -223,21 +245,37 @@ DISPLAY_GEN: process(CLK, RESET)
                         NEXT_FG_G <= MEMORY_DATA_IN(1);
                         NEXT_FG_B <= MEMORY_DATA_IN(2);
                         MOSAIC_ENABLE <= '0';
+                        CONCEAL <= '0';
+                    when "0001000" =>
+                        -- Flash (Set-After)
+                        FLASH <= '1';
+                    when "0001001" =>
+                        -- Steady (Set-At)
+                        FLASH <= '0';
                     when "0010001"|"0010010"|"0010011"|"0010100"|"0010101"|"0010110"|"0010111" =>
                         NEXT_FG_R <= MEMORY_DATA_IN(0);
                         NEXT_FG_G <= MEMORY_DATA_IN(1);
                         NEXT_FG_B <= MEMORY_DATA_IN(2);
                         MOSAIC_ENABLE <= '1';
-                        -- Put hold mosaic stuff here
+                        CONCEAL <= '0';
+                    when "0011000" =>
+                        -- Conceal
+                        CONCEAL <= '1';
                     when "0011001" =>
                         CONTIGUOUS <= '1';
                     when "0011010" =>
                         CONTIGUOUS <= '0';
+                    when "0011100" =>
+                        -- Black Background (Set-At)
+                        BG_R <= '0';
+                        BG_G <= '0';
+                        BG_B <= '0';
                     when "0011110" =>
                         MOSAIC_HOLD <= '1';
                     when "0011111" =>
                         MOSAIC_HOLD <= '0';
                     when "0011101" =>
+                        -- New Background (Set-At)
                         BG_R <= NEXT_FG_R;
                         BG_G <= NEXT_FG_G;
                         BG_B <= NEXT_FG_B;
@@ -278,8 +316,10 @@ DISPLAY_GEN: process(CLK, RESET)
             end if;
         end if;
     end process;
-    R_OUT <= (CURRENT_PIXEL AND FG_R_D) or ((NOT CURRENT_PIXEL) AND BG_R_D);
-    G_OUT <= (CURRENT_PIXEL AND FG_G_D) or ((NOT CURRENT_PIXEL) AND BG_G_D);
-    B_OUT <= (CURRENT_PIXEL AND FG_B_D) or ((NOT CURRENT_PIXEL) AND BG_B_D);
-
+    R_OUT <= '1' when PIXEL_COUNTER < 121 or PIXEL_COUNTER > 601 else ((CURRENT_PIXEL AND FG_R_D) or ((NOT CURRENT_PIXEL) AND BG_R_D)) and DISP_ATTRIBUTE;
+    G_OUT <= ((CURRENT_PIXEL AND FG_G_D) or ((NOT CURRENT_PIXEL) AND BG_G_D)) and DISP_ATTRIBUTE;
+    B_OUT <= ((CURRENT_PIXEL AND FG_B_D) or ((NOT CURRENT_PIXEL) AND BG_B_D)) and DISP_ATTRIBUTE;
+    
+    FLASH_TIMER_PULSE <= '1' when FLASH_TIMER < FLASH_DURATION / 2 else '0';
+    DISP_ATTRIBUTE <= ((NOT CONCEAL) OR REVEAL_IN) AND ((NOT FLASH) OR FLASH_TIMER_PULSE);
 end architecture;

@@ -19,7 +19,7 @@ entity VGA is
 end entity VGA;
 
 architecture RTL of VGA is
-constant H_SIZE : integer := 768;
+constant H_SIZE : integer := 720;
 constant H_FRONT_PORCH : integer := 16;
 constant H_SYNC_PULSE : integer := 96;
 constant H_BACK_PORCH : integer := 48;
