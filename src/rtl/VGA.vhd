@@ -46,7 +46,7 @@ signal VIDEO_ACTIVE : std_logic;
 
 begin
 VIDEO_ACTIVE <= H_ACTIVE and V_ACTIVE;
-R_OUT <= R_IN when VIDEO_ACTIVE = '1' else '0';
+R_OUT <= '1' when H_COUNT = 0 or H_COUNT = H_SIZE - 1 or V_COUNT = 0 or V_COUNT = V_SIZE - 1 else R_IN when VIDEO_ACTIVE = '1' else '0';
 G_OUT <= G_IN when VIDEO_ACTIVE = '1' else '0';
 B_OUT <= B_IN when VIDEO_ACTIVE = '1' else '0';
 

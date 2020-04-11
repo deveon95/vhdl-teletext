@@ -49,6 +49,7 @@ signal BG_R, BG_R_D : std_logic;
 signal BG_G, BG_G_D : std_logic;
 signal BG_B, BG_B_D : std_logic;
 signal CONCEAL : std_logic;
+signal NEXT_CONCEAL : std_logic;
 signal FLASH : std_logic;
 signal FLASH_TIMER : integer range 0 to FLASH_DURATION;
 signal FLASH_TIMER_PULSE : std_logic;
@@ -82,14 +83,14 @@ CGROM: entity work.CGROM
     MOSAIC(3) <= CHAR_TO_DISPLAY(3);
     MOSAIC(4) <= CHAR_TO_DISPLAY(4);
     MOSAIC(5) <= CHAR_TO_DISPLAY(6);
-    MOSAIC_PIXEL <= '0' when CONTIGUOUS = '0' and (CHAR_COL_COUNTER_D = 0 or CHAR_COL_COUNTER_D = 3 or CHAR_ROW_COUNTER = 0 or CHAR_ROW_COUNTER = 3 or CHAR_ROW_COUNTER = 7 or CHAR_ROW_COUNTER = 10) else
+    MOSAIC_PIXEL <= '0' when CONTIGUOUS = '0' and (CHAR_COL_COUNTER_D = 0 or CHAR_COL_COUNTER_D = 3 or CHAR_ROW_COUNTER = 3 or CHAR_ROW_COUNTER = 6 or CHAR_ROW_COUNTER = 10) else
                     MOSAIC(0) when CHAR_COL_COUNTER_D < 3 and CHAR_ROW_COUNTER < 3 else
                     MOSAIC(1) when CHAR_COL_COUNTER_D >= 3 and CHAR_ROW_COUNTER < 3 else
                     MOSAIC(2) when CHAR_COL_COUNTER_D < 3 and CHAR_ROW_COUNTER < 7 else
                     MOSAIC(3) when CHAR_COL_COUNTER_D >= 3 and CHAR_ROW_COUNTER < 7 else
                     MOSAIC(4) when CHAR_COL_COUNTER_D < 3 and CHAR_ROW_COUNTER < 11 else
                     MOSAIC(5) when CHAR_COL_COUNTER_D >= 3 and CHAR_ROW_COUNTER < 11 else '0';
-    LAST_MOSAIC_PIXEL <= '0' when CONTIGUOUS = '0' and (CHAR_COL_COUNTER_D = 0 or CHAR_COL_COUNTER_D = 3 or CHAR_ROW_COUNTER = 0 or CHAR_ROW_COUNTER = 3 or CHAR_ROW_COUNTER = 7 or CHAR_ROW_COUNTER = 10) else
+    LAST_MOSAIC_PIXEL <= '0' when CONTIGUOUS = '0' and (CHAR_COL_COUNTER_D = 0 or CHAR_COL_COUNTER_D = 3 or CHAR_ROW_COUNTER = 3 or CHAR_ROW_COUNTER = 6 or CHAR_ROW_COUNTER = 10) else
                     LAST_MOSAIC(0) when CHAR_COL_COUNTER_D < 3 and CHAR_ROW_COUNTER < 3 else
                     LAST_MOSAIC(1) when CHAR_COL_COUNTER_D >= 3 and CHAR_ROW_COUNTER < 3 else
                     LAST_MOSAIC(2) when CHAR_COL_COUNTER_D < 3 and CHAR_ROW_COUNTER < 7 else
@@ -170,12 +171,14 @@ DISPLAY_GEN: process(CLK, RESET)
             MOSAIC_ENABLE <= '0';
             MOSAIC_HOLD <= '0';
             CONCEAL <= '0';
+            NEXT_CONCEAL <= '0';
             FLASH <= '0';
             FLASH_TIMER <= 0;
             CONTIGUOUS <= '1';
             LAST_MOSAIC <= (others => '0');
             NEXT_H_PIXEL_D <= '0';
         elsif rising_edge(CLK) then
+            DISP_ATTRIBUTE <= ((NOT CONCEAL) OR REVEAL_IN) AND ((NOT FLASH) OR FLASH_TIMER_PULSE);
             NEXT_H_PIXEL_D <= NEXT_H_PIXEL;
             CHAR_COL_COUNTER_D <= CHAR_COL_COUNTER;
             FG_R_D <= FG_R;
@@ -215,6 +218,7 @@ DISPLAY_GEN: process(CLK, RESET)
                 MOSAIC_ENABLE <= '0';
                 MOSAIC_HOLD <= '0';
                 CONCEAL <= '0';
+                NEXT_CONCEAL <= '0';
                 FLASH <= '0';
                 CONTIGUOUS <= '1';
                 LAST_MOSAIC <= (others => '0');
@@ -239,13 +243,14 @@ DISPLAY_GEN: process(CLK, RESET)
                     FG_R <= NEXT_FG_R;
                     FG_G <= NEXT_FG_G;
                     FG_B <= NEXT_FG_B;
+                    CONCEAL <= NEXT_CONCEAL;
                     case MEMORY_DATA_IN is
                     when "0000001"|"0000010"|"0000011"|"0000100"|"0000101"|"0000110"|"0000111" =>
                         NEXT_FG_R <= MEMORY_DATA_IN(0);
                         NEXT_FG_G <= MEMORY_DATA_IN(1);
                         NEXT_FG_B <= MEMORY_DATA_IN(2);
                         MOSAIC_ENABLE <= '0';
-                        CONCEAL <= '0';
+                        NEXT_CONCEAL <= '0';
                     when "0001000" =>
                         -- Flash (Set-After)
                         FLASH <= '1';
@@ -257,10 +262,11 @@ DISPLAY_GEN: process(CLK, RESET)
                         NEXT_FG_G <= MEMORY_DATA_IN(1);
                         NEXT_FG_B <= MEMORY_DATA_IN(2);
                         MOSAIC_ENABLE <= '1';
-                        CONCEAL <= '0';
+                        NEXT_CONCEAL <= '0';
                     when "0011000" =>
-                        -- Conceal
+                        -- Conceal (Set-At)
                         CONCEAL <= '1';
+                        NEXT_CONCEAL <= '1';
                     when "0011001" =>
                         CONTIGUOUS <= '1';
                     when "0011010" =>
@@ -316,10 +322,9 @@ DISPLAY_GEN: process(CLK, RESET)
             end if;
         end if;
     end process;
-    R_OUT <= '1' when PIXEL_COUNTER < 121 or PIXEL_COUNTER > 601 else ((CURRENT_PIXEL AND FG_R_D) or ((NOT CURRENT_PIXEL) AND BG_R_D)) and DISP_ATTRIBUTE;
+    R_OUT <= ((CURRENT_PIXEL AND FG_R_D) or ((NOT CURRENT_PIXEL) AND BG_R_D)) and DISP_ATTRIBUTE;
     G_OUT <= ((CURRENT_PIXEL AND FG_G_D) or ((NOT CURRENT_PIXEL) AND BG_G_D)) and DISP_ATTRIBUTE;
     B_OUT <= ((CURRENT_PIXEL AND FG_B_D) or ((NOT CURRENT_PIXEL) AND BG_B_D)) and DISP_ATTRIBUTE;
     
     FLASH_TIMER_PULSE <= '1' when FLASH_TIMER < FLASH_DURATION / 2 else '0';
-    DISP_ATTRIBUTE <= ((NOT CONCEAL) OR REVEAL_IN) AND ((NOT FLASH) OR FLASH_TIMER_PULSE);
 end architecture;
