@@ -90,6 +90,13 @@ MAIN: process(CLK_27_750, RESET)
             case STATE is
             when WAIT_FOR_FRAME =>
                 MEM_WREN_OUT <= '0';
+                -- Show rolling header when waiting for page
+                if FRAME_VALID_IN = '1' and MAGAZINE_IN = REQ_MAGAZINE_IN 
+                and (ROW_INTEGER = 0) then
+                    ADDRESS_COUNTER <= LINE_START_ADDRESS;
+                    MEMORY_ERASE_REQUIRED <= '0';
+                    STATE <= RECEIVE_FRAME;
+                end if;
                 -- Load page when correct page is broadcast
                 if FRAME_VALID_IN = '1' and MAGAZINE_IN = REQ_MAGAZINE_IN 
                 and (PAGE_IN = REQ_PAGE_IN and (REQ_SUBCODE_IN = SUBCODE_IN or REQ_SUBCODE_SPEC_IN = '0')) then
@@ -105,13 +112,6 @@ MAIN: process(CLK_27_750, RESET)
                     LAST_LOADED_MAGAZINE <= MAGAZINE_IN;
                     STATE <= RECEIVE_FRAME;
                 end if;
-                -- Show rolling header when waiting for page
-                if FRAME_VALID_IN = '1' and MAGAZINE_IN = REQ_MAGAZINE_IN 
-                and (ROW_INTEGER = 0) then
-                    ADDRESS_COUNTER <= LINE_START_ADDRESS;
-                    MEMORY_ERASE_REQUIRED <= '0';
-                    STATE <= RECEIVE_FRAME;
-                end if;
                 -- Update status when change in the eight status characters is detected
                 if STATUS_NEEDS_UPDATING = '1' and UPCOMING_FRAME_IN = '0' then
                     ADDRESS_COUNTER <= 0;
@@ -120,7 +120,7 @@ MAIN: process(CLK_27_750, RESET)
                 end if;
             when RECEIVE_FRAME =>
                 if FRAME_VALID_IN = '0' then
-                    if MEMORY_ERASE_REQUIRED = '1' and LINE_START_ADDRESS = 0 then
+                    if MEMORY_ERASE_REQUIRED = '1' and LINE_START_ADDRESS = 8 then
                         STATE <= ERASE_MEMORY_START;
                     else
                         STATE <= WAIT_FOR_FRAME;
