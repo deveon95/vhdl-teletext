@@ -51,6 +51,26 @@ type STATUS_ARRAY_TYPE is array (0 to 7) of std_logic_vector(6 downto 0);
 signal STATUS_ARRAY : STATUS_ARRAY_TYPE;
 signal STATUS_ARRAY_LAST : STATUS_ARRAY_TYPE;
 
+function HEX_TO_ASCII(HEX_IN : std_logic_vector)
+        return std_logic_vector is
+begin
+    if HEX_IN = "1010" then
+        return "1000001";
+    elsif HEX_IN = "1011" then
+        return "1000010";
+    elsif HEX_IN = "1100" then
+        return "1000011";
+    elsif HEX_IN = "1101" then
+        return "1000100";
+    elsif HEX_IN = "1110" then
+        return "1000101";
+    elsif HEX_IN = "1111" then
+        return "1000110";
+    else
+        return "011" & HEX_IN;
+    end if;
+end HEX_TO_ASCII;
+
 begin
 MAIN: process(CLK_27_750, RESET)
     begin
@@ -74,7 +94,12 @@ MAIN: process(CLK_27_750, RESET)
                 if FRAME_VALID_IN = '1' and MAGAZINE_IN = REQ_MAGAZINE_IN 
                 and (PAGE_IN = REQ_PAGE_IN and (REQ_SUBCODE_IN = SUBCODE_IN or REQ_SUBCODE_SPEC_IN = '0')) then
                     ADDRESS_COUNTER <= LINE_START_ADDRESS;
-                    MEMORY_ERASE_REQUIRED <= CONTROL_BITS_IN(0);
+                    -- Erase page if appropriate bit is set or new page is a different page number. Full Field detection (packet 8/30) required.
+                    if PAGE_IN /= LAST_LOADED_PAGE or MAGAZINE_IN /= LAST_LOADED_MAGAZINE then
+                        MEMORY_ERASE_REQUIRED <= '1';
+                    else
+                        MEMORY_ERASE_REQUIRED <= CONTROL_BITS_IN(0);
+                    end if;
                     LAST_LOADED_PAGE <= PAGE_IN;
                     LAST_LOADED_SUBCODE <= SUBCODE_IN;
                     LAST_LOADED_MAGAZINE <= MAGAZINE_IN;
@@ -103,7 +128,7 @@ MAIN: process(CLK_27_750, RESET)
                     PAGE_FOUND_END <= PAGE_FOUND;
                 elsif WORD_CLOCK_IN = '1' then
                     MEM_DATA_OUT <= WORD_IN;
-                    -- IF statement suppresses write enable for header row prior to clock when page has been found
+                    -- IF statement suppresses write enable for header row prior to clock when page has not been found
                     if ROW_INTEGER /= 0 or PAGE_FOUND_END = '0' or ADDRESS_COUNTER >= 32 then
                         MEM_WREN_OUT <= VISIBLE_PACKET;
                     end if;
@@ -177,9 +202,9 @@ MAIN: process(CLK_27_750, RESET)
     
     STATUS_ARRAY(0) <= "0000111";
     STATUS_ARRAY(1) <= "01100" & REQ_SUBCODE_IN(12 downto 11) when REQ_SUBCODE_SPEC_IN = '1' else "1010000";
-    STATUS_ARRAY(2) <= "011" & REQ_SUBCODE_IN(10 downto 7) when REQ_SUBCODE_SPEC_IN = '1' else "0110" & REQ_MAGAZINE_IN;
-    STATUS_ARRAY(3) <= "0110" & REQ_SUBCODE_IN(6 downto 4) when REQ_SUBCODE_SPEC_IN = '1' else "011" & REQ_PAGE_IN(7 downto 4);
-    STATUS_ARRAY(4) <= "011" & REQ_SUBCODE_IN(3 downto 0) when REQ_SUBCODE_SPEC_IN = '1' else "011" & REQ_PAGE_IN(3 downto 0);
+    STATUS_ARRAY(2) <= HEX_TO_ASCII(REQ_SUBCODE_IN(10 downto 7)) when REQ_SUBCODE_SPEC_IN = '1' else HEX_TO_ASCII(NOT (REQ_MAGAZINE_IN(2) OR REQ_MAGAZINE_IN(1) OR REQ_MAGAZINE_IN(0)) & REQ_MAGAZINE_IN);
+    STATUS_ARRAY(3) <= "0110" & REQ_SUBCODE_IN(6 downto 4) when REQ_SUBCODE_SPEC_IN = '1' else HEX_TO_ASCII(REQ_PAGE_IN(7 downto 4));
+    STATUS_ARRAY(4) <= HEX_TO_ASCII(REQ_SUBCODE_IN(3 downto 0)) when REQ_SUBCODE_SPEC_IN = '1' else HEX_TO_ASCII(REQ_PAGE_IN(3 downto 0));
     STATUS_ARRAY(5) <= "0100000";
     STATUS_ARRAY(6) <= "0100000";
     STATUS_ARRAY(7) <= "0000010" when PAGE_FOUND = '0' else "0000111";

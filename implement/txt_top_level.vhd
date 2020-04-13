@@ -70,7 +70,7 @@ begin
 PAGE_NUMBER_CONTROLLER: process(CLK_27_750, RESET)
     begin
         if RESET = '1' then
-            PAGE_NUMBER <= 1938;
+            PAGE_NUMBER <= 512;--1939;
             PAGE_UP_SYNC <= '0';
             PAGE_UP_SYNC_2 <= '0';
             PAGE_DOWN_SYNC <= '0';

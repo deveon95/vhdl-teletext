@@ -70,7 +70,7 @@ begin
 CGROM: entity work.CGROM
     port map(
     ADDRESS_IN => CHAR_TO_DISPLAY,
-    ROW_SELECT_IN => std_logic_vector(to_unsigned(CHAR_ROW_COUNTER,4)),
+    ROW_SELECT_IN => std_logic_vector(to_unsigned(CHAR_ROW_COUNTER - 1,4)),
     DATA_OUT => CGROM_LINE);
     
     -- Generate the mosaic character
