@@ -8,6 +8,7 @@ port (
     RESET : in std_logic;
     
     REVEAL_IN : in std_logic;
+    MIX_IN : in std_logic;
     
     MEMORY_DATA_IN : in std_logic_vector(6 downto 0);
     MEMORY_ADDRESS_OUT : out std_logic_vector(9 downto 0);
@@ -55,6 +56,7 @@ signal FLASH_TIMER : integer range 0 to FLASH_DURATION;
 signal FLASH_TIMER_PULSE : std_logic;
 signal MOSAIC_ENABLE : std_logic;
 signal MOSAIC_HOLD : std_logic;
+signal NEXT_MOSAIC_HOLD : std_logic;
 signal CONTIGUOUS : std_logic;
 signal MOSAIC : std_logic_vector(5 downto 0);
 signal MOSAIC_PIXEL, LAST_MOSAIC_PIXEL : std_logic;
@@ -170,6 +172,7 @@ DISPLAY_GEN: process(CLK, RESET)
             CHAR_TO_DISPLAY <= (others => '0');
             MOSAIC_ENABLE <= '0';
             MOSAIC_HOLD <= '0';
+            NEXT_MOSAIC_HOLD <= '0';
             CONCEAL <= '0';
             NEXT_CONCEAL <= '0';
             FLASH <= '0';
@@ -217,6 +220,7 @@ DISPLAY_GEN: process(CLK, RESET)
                 BG_B <= '0';
                 MOSAIC_ENABLE <= '0';
                 MOSAIC_HOLD <= '0';
+                NEXT_MOSAIC_HOLD <= '0';
                 CONCEAL <= '0';
                 NEXT_CONCEAL <= '0';
                 FLASH <= '0';
@@ -244,6 +248,7 @@ DISPLAY_GEN: process(CLK, RESET)
                     FG_G <= NEXT_FG_G;
                     FG_B <= NEXT_FG_B;
                     CONCEAL <= NEXT_CONCEAL;
+                    MOSAIC_HOLD <= NEXT_MOSAIC_HOLD;
                     case MEMORY_DATA_IN is
                     when "0000001"|"0000010"|"0000011"|"0000100"|"0000101"|"0000110"|"0000111" =>
                         NEXT_FG_R <= MEMORY_DATA_IN(0);
@@ -277,9 +282,12 @@ DISPLAY_GEN: process(CLK, RESET)
                         BG_G <= '0';
                         BG_B <= '0';
                     when "0011110" =>
+                        -- Mosaic Hold (Set-At)
                         MOSAIC_HOLD <= '1';
+                        NEXT_MOSAIC_HOLD <= '1';
                     when "0011111" =>
-                        MOSAIC_HOLD <= '0';
+                        -- Mosaic Hold (should be Set-After)
+                        NEXT_MOSAIC_HOLD <= '0';
                     when "0011101" =>
                         -- New Background (Set-At)
                         BG_R <= NEXT_FG_R;
@@ -322,9 +330,9 @@ DISPLAY_GEN: process(CLK, RESET)
             end if;
         end if;
     end process;
-    R_OUT <= ((CURRENT_PIXEL AND FG_R_D) or ((NOT CURRENT_PIXEL) AND BG_R_D)) and DISP_ATTRIBUTE;
-    G_OUT <= ((CURRENT_PIXEL AND FG_G_D) or ((NOT CURRENT_PIXEL) AND BG_G_D)) and DISP_ATTRIBUTE;
-    B_OUT <= ((CURRENT_PIXEL AND FG_B_D) or ((NOT CURRENT_PIXEL) AND BG_B_D)) and DISP_ATTRIBUTE;
+    R_OUT <= ((CURRENT_PIXEL AND FG_R_D) or ((NOT CURRENT_PIXEL) AND BG_R_D AND (NOT MIX_IN))) and DISP_ATTRIBUTE;
+    G_OUT <= ((CURRENT_PIXEL AND FG_G_D) or ((NOT CURRENT_PIXEL) AND BG_G_D AND (NOT MIX_IN))) and DISP_ATTRIBUTE;
+    B_OUT <= ((CURRENT_PIXEL AND FG_B_D) or ((NOT CURRENT_PIXEL) AND BG_B_D AND (NOT MIX_IN))) and DISP_ATTRIBUTE;
     
     FLASH_TIMER_PULSE <= '1' when FLASH_TIMER < FLASH_DURATION / 2 else '0';
 end architecture;

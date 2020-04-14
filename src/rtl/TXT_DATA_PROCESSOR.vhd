@@ -26,6 +26,7 @@ end entity TXT_DATA_PROCESSOR;
 architecture RTL of TXT_DATA_PROCESSOR is
 type T_PAGE_AND_SUBCODE_CACHE is array (integer range <>) of std_logic_vector(31 downto 0);
 signal PAGE_AND_SUBCODE_CACHE : T_PAGE_AND_SUBCODE_CACHE(7 downto 0);
+signal GOOD_HEADER_RECEIVED : std_logic_vector(7 downto 0);
 
 signal ODD_PARITY_ENCODED : std_logic_vector(7 downto 0);
 signal ODD_PARITY_DECODED : std_logic_vector(6 downto 0);
@@ -93,6 +94,7 @@ MAIN: process(CLK_27_750, RESET)
             PAGE_OUT <= (others => '0');
             SUBCODE_OUT <= (others => '0');
             CONTROL_BITS_OUT <= (others => '0');
+            GOOD_HEADER_RECEIVED <= (others => '0');
         elsif rising_edge(CLK_27_750) then
             BYTE_CLOCK_DELAYED <= BYTE_CLOCK_IN;
             BYTE_CLOCK_DELAYED_2 <= BYTE_CLOCK_DELAYED;
@@ -122,12 +124,15 @@ MAIN: process(CLK_27_750, RESET)
                             ROW_OUT <= CURRENT_LINE;
                             if CURRENT_LINE = "00000" then
                                 RX_BYTE <= PAGEUNITS;
-                            else
+                            elsif GOOD_HEADER_RECEIVED(to_integer(unsigned(CURRENT_MAGAZINE))) = '1' then
+                                -- Proceed to data processing only when a good header has been received
                                 RX_BYTE <= DATA;
                                 -- Restore Subcode and Page from cache; needed in case of magazine change during parallel transmission
                                 CURRENT_SUBCODE <= PAGE_AND_SUBCODE_CACHE(to_integer(unsigned(CURRENT_MAGAZINE)))(20 downto 8);
                                 CURRENT_PAGE <= PAGE_AND_SUBCODE_CACHE(to_integer(unsigned(CURRENT_MAGAZINE)))(7 downto 0);
                                 CURRENT_CONTROL_BITS <= PAGE_AND_SUBCODE_CACHE(to_integer(unsigned(CURRENT_MAGAZINE)))(31 downto 21);
+                            else
+                                RX_BYTE <= BAD;
                             end if;
                         end if;
                     end if;
@@ -227,6 +232,7 @@ MAIN: process(CLK_27_750, RESET)
                         CURRENT_CONTROL_BITS(10 downto 7) <= HAMMING84_DECODED;
                     elsif BYTE_CLOCK_DELAYED_2 = '1' then
                         if HAMMING84_VALID = '1' then
+                            GOOD_HEADER_RECEIVED(to_integer(unsigned(CURRENT_MAGAZINE))) <= '1';
                             PAGE_AND_SUBCODE_CACHE(to_integer(unsigned(CURRENT_MAGAZINE))) <= CURRENT_CONTROL_BITS & CURRENT_SUBCODE & CURRENT_PAGE;
                             RX_BYTE <= DATA;
                         else
@@ -242,7 +248,11 @@ MAIN: process(CLK_27_750, RESET)
                         CONTROL_BITS_OUT <= CURRENT_CONTROL_BITS;
                         FRAME_VALID_OUT <= '1';
                     elsif BYTE_CLOCK_DELAYED = '1' then
-                        WORD_OUT <= ODD_PARITY_DECODED;
+                        if ODD_PARITY_VALID = '1' then
+                            WORD_OUT <= ODD_PARITY_DECODED;
+                        else
+                            WORD_OUT <= "0100000";
+                        end if;
                         WORD_CLOCK_OUT <= '1';
                     else
                         WORD_CLOCK_OUT <= '0';
@@ -250,6 +260,8 @@ MAIN: process(CLK_27_750, RESET)
                 
                 when BAD =>
                     -- Stay here until the end of the frame when the line number / magazine is bad
+                    -- Current page number cannot be trusted so disable data reception until good header packet received
+                    GOOD_HEADER_RECEIVED(to_integer(unsigned(CURRENT_MAGAZINE))) <= '0';
                     
                 WHEN OTHERS =>
                     RX_BYTE <= MAGROW1;

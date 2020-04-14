@@ -42,13 +42,15 @@ signal H_ACTIVE : std_logic;
 constant V_COUNT_MAX : integer := V_SIZE + V_FRONT_PORCH + V_SYNC_PULSE + V_BACK_PORCH - 1;
 signal V_COUNT : integer range 0 to V_COUNT_MAX;
 signal V_ACTIVE : std_logic;
+signal VIDEO_BORDER : std_logic;
 signal VIDEO_ACTIVE : std_logic;
 
 begin
+VIDEO_BORDER <= '1' when H_COUNT = 1 or H_COUNT = H_SIZE or H_COUNT = H_SIZE / 2 - 320 or H_COUNT = H_SIZE / 2 + 320 or V_COUNT = 0 or V_COUNT = V_SIZE - 1 else '0';
 VIDEO_ACTIVE <= H_ACTIVE and V_ACTIVE;
-R_OUT <= '1' when H_COUNT = 0 or H_COUNT = H_SIZE - 1 or H_COUNT = H_SIZE / 2 - 320 or H_COUNT = H_SIZE / 2 + 320 or V_COUNT = 0 or V_COUNT = V_SIZE - 1 else R_IN when VIDEO_ACTIVE = '1' else '0';
-G_OUT <= G_IN when VIDEO_ACTIVE = '1' else '0';
-B_OUT <= B_IN when VIDEO_ACTIVE = '1' else '0';
+R_OUT <= R_IN or VIDEO_BORDER when VIDEO_ACTIVE = '1' else '0';
+G_OUT <= G_IN or VIDEO_BORDER when VIDEO_ACTIVE = '1' else '0';
+B_OUT <= B_IN or VIDEO_BORDER when VIDEO_ACTIVE = '1' else '0';
 
 COUNTER: process (CLK, RESET)
     begin

@@ -14,9 +14,9 @@ entity TXT_DATA_RECOVERY is
 end entity TXT_DATA_RECOVERY;
 
 architecture RTL of TXT_DATA_RECOVERY is
-
-constant RUN_IN : std_logic_vector(95 downto 0) := "-111-000-111-000-111-000-111-000-111-000-111-000-111-000-111-000-11111111111-0000000-111-0000000";
-signal RX_SHIFT_REGISTER : std_logic_vector(95 downto 0);
+-- ETSI EN 300 706 V1.2.1 Section 6.1: First two 1s may be missing, so these are not checked
+constant RUN_IN : std_logic_vector(79 downto 0) := "-111-000-111-000-111-000-111-000-111-000-111-000-11111111111-0000000-111-0000000";
+signal RX_SHIFT_REGISTER : std_logic_vector(79 downto 0);
 signal LOCKED : std_logic;
 constant BIT_SAMPLE_COUNTER_MAX : integer := 3;
 signal BIT_SAMPLE_COUNTER : integer range 0 to BIT_SAMPLE_COUNTER_MAX;

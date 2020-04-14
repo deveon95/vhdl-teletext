@@ -15,6 +15,7 @@ entity TXT_TOP_LEVEL is
     RESET_REPEATER  : out std_logic;
     RX_IN           : in  std_logic;
     
+    MIX_IN : in std_logic;
     REVEAL_IN : in std_logic;
     PAGE_UP : in std_logic;
     PAGE_DOWN : in std_logic;
@@ -196,6 +197,7 @@ DISPLAY_GENERATOR: entity work.DISPLAY_GENERATOR
     MEMORY_DATA_IN => DPR_READ_DATA,
     MEMORY_ADDRESS_OUT => DPR_READ_ADDRESS,
     
+    MIX_IN => not MIX_IN,
     REVEAL_IN => not REVEAL_IN,
     
     NEW_ROW_IN => NEW_ROW,
