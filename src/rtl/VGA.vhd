@@ -19,6 +19,7 @@ entity VGA is
 end entity VGA;
 
 architecture RTL of VGA is
+-- Parameters for 720x576 resolution
 constant H_SIZE : integer := 720;
 constant H_FRONT_PORCH : integer := 16;
 constant H_SYNC_PULSE : integer := 96;
@@ -27,6 +28,7 @@ constant V_SIZE : integer := 576;
 constant V_FRONT_PORCH : integer := 11;
 constant V_SYNC_PULSE : integer := 2;
 constant V_BACK_PORCH : integer := 31;
+-- Parameters for 640x480 resolution
 --constant H_SIZE : integer := 640;
 --constant H_FRONT_PORCH : integer := 16;
 --constant H_SYNC_PULSE : integer := 96;
@@ -46,7 +48,10 @@ signal VIDEO_BORDER : std_logic;
 signal VIDEO_ACTIVE : std_logic;
 
 begin
-VIDEO_BORDER <= '1' when H_COUNT = 1 or H_COUNT = H_SIZE or H_COUNT = H_SIZE / 2 - 320 or H_COUNT = H_SIZE / 2 + 320 or V_COUNT = 0 or V_COUNT = V_SIZE - 1 else '0';
+--VIDEO_BORDER <= '1' when H_COUNT = 1 or H_COUNT = H_SIZE or H_COUNT = H_SIZE / 2 - 320 or H_COUNT = H_SIZE / 2 + 320 or V_COUNT = 0 or V_COUNT = V_SIZE - 1 else '0';
+-- Draw border around the area which should be adjusted to 4:3 size on the monitor for proper text aspect ratio
+VIDEO_BORDER <= '1' when H_COUNT = H_SIZE / 2 - 320 or H_COUNT = H_SIZE / 2 + 320 or ((V_COUNT = 0 or V_COUNT = V_SIZE - 1) and H_COUNT > H_SIZE / 2 - 320 and H_COUNT < H_SIZE / 2 + 320) else '0';
+
 VIDEO_ACTIVE <= H_ACTIVE and V_ACTIVE;
 R_OUT <= R_IN or VIDEO_BORDER when VIDEO_ACTIVE = '1' else '0';
 G_OUT <= G_IN or VIDEO_BORDER when VIDEO_ACTIVE = '1' else '0';

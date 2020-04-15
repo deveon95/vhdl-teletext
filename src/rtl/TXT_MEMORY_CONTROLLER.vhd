@@ -35,6 +35,8 @@ architecture RTL of TXT_MEMORY_CONTROLLER is
 signal MEMORY_ERASE_REQUIRED : std_logic;
 signal VISIBLE_PACKET : std_logic;
 signal PAGE_FOUND     : std_logic;          -- Updated at beginning of packet
+signal SET_PAGE_FOUND : std_logic;
+signal CLEAR_PAGE_FOUND : std_logic;
 signal PAGE_FOUND_END : std_logic;          -- Updated at end of packet
 signal STATUS_NEEDS_UPDATING : std_logic;
 signal STATUS_UPDATED : std_logic;
@@ -101,6 +103,7 @@ MAIN: process(CLK_27_750, RESET)
                 if FRAME_VALID_IN = '1' and MAGAZINE_IN = REQ_MAGAZINE_IN 
                 and (PAGE_IN = REQ_PAGE_IN and (REQ_SUBCODE_IN = SUBCODE_IN or REQ_SUBCODE_SPEC_IN = '0')) then
                     ADDRESS_COUNTER <= LINE_START_ADDRESS;
+                    SET_PAGE_FOUND <= '1';
                     -- Erase page if appropriate bit is set or new page is a different page number. Full Field detection (packet 8/30) required.
                     if PAGE_IN /= LAST_LOADED_PAGE or MAGAZINE_IN /= LAST_LOADED_MAGAZINE then
                         MEMORY_ERASE_REQUIRED <= '1';
@@ -119,6 +122,7 @@ MAIN: process(CLK_27_750, RESET)
                     STATUS_UPDATED <= '1';
                 end if;
             when RECEIVE_FRAME =>
+                SET_PAGE_FOUND <= '0';
                 if FRAME_VALID_IN = '0' then
                     if MEMORY_ERASE_REQUIRED = '1' and LINE_START_ADDRESS = 8 then
                         STATE <= ERASE_MEMORY_START;
@@ -209,7 +213,20 @@ MAIN: process(CLK_27_750, RESET)
     STATUS_ARRAY(6) <= "0100000";
     STATUS_ARRAY(7) <= "0000010" when PAGE_FOUND = '0' else "0000111";
 
-    PAGE_FOUND <= '1' when LAST_LOADED_PAGE = REQ_PAGE_IN and LAST_LOADED_MAGAZINE = REQ_MAGAZINE_IN and (REQ_SUBCODE_SPEC_IN = '0' or LAST_LOADED_SUBCODE = REQ_SUBCODE_IN) else '0';
+    CLEAR_PAGE_FOUND <= '0' when LAST_LOADED_PAGE = REQ_PAGE_IN and LAST_LOADED_MAGAZINE = REQ_MAGAZINE_IN and (REQ_SUBCODE_SPEC_IN = '0' or LAST_LOADED_SUBCODE = REQ_SUBCODE_IN) else '1';
+    
+PAGE_FOUND_LATCH: process(CLK_27_750, RESET)
+    begin
+        if RESET = '1' then
+            PAGE_FOUND <= '0';
+        elsif rising_edge(CLK_27_750) then
+            if SET_PAGE_FOUND = '1' then
+                PAGE_FOUND <= '1';
+            elsif CLEAR_PAGE_FOUND = '1' then
+                PAGE_FOUND <= '0';
+            end if;
+        end if;
+    end process;
     
 STATUS_ARRAY_MONITOR: process(CLK_27_750, RESET)
     begin
