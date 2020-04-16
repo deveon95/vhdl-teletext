@@ -1,5 +1,5 @@
--- ********** Use Clock Controller to set CLK1 to 27750 on C10 Dev Board **
--- ********** Use Clock Controller to set CLK2 to 27300
+-- ********** Use Clock Controller to set CLK1 to 27750 and CLK2 to 32500 for 60Hz on C10 Dev Board **
+-- ********** Use Clock Controller to set CLK2 to 27750 and CLK2 to 27300 for 50Hz
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -7,24 +7,21 @@ use ieee.numeric_std.all;
 
 entity TXT_TOP_LEVEL is
     port (
-    CLK_27_750      : in  std_logic;
-    CLK_25          : in  std_logic;
-    RESETn          : in  std_logic;
-    CLK_REPEATER    : out std_logic;
-    CLK_REPEATER2   : out std_logic;
-    RESET_REPEATER  : out std_logic;
-    RX_IN           : in  std_logic;
+    CLK_27_750 : in  std_logic;
+    CLK_VIDEO  : in  std_logic;
+    RESETn     : in  std_logic;
+    RX_IN      : in  std_logic;
     
-    MIX_IN : in std_logic;
-    REVEAL_IN : in std_logic;
-    PAGE_UP : in std_logic;
-    PAGE_DOWN : in std_logic;
+    MIX_IN     : in std_logic;
+    REVEAL_IN  : in std_logic;
+    PAGE_UP    : in std_logic;
+    PAGE_DOWN  : in std_logic;
     
-    R_OUT : out std_logic;
-    G_OUT : out std_logic;
-    B_OUT : out std_logic;
-    HSYNC_OUT : out std_logic;
-    VSYNC_OUT : out std_logic
+    R_OUT      : out std_logic;
+    G_OUT      : out std_logic;
+    B_OUT      : out std_logic;
+    HSYNC_OUT  : out std_logic;
+    VSYNC_OUT  : out std_logic
     );
 end entity TXT_TOP_LEVEL;
 
@@ -62,16 +59,13 @@ signal G : std_logic;
 signal B : std_logic;
 begin
 
-    CLK_REPEATER <= CLK_27_750;
-    CLK_REPEATER2 <= CLK_27_750;
     RESET <= not RESETn;
-    RESET_REPEATER <= RESETn;
     
 -- A very simple page number entry system for testing
 PAGE_NUMBER_CONTROLLER: process(CLK_27_750, RESET)
     begin
         if RESET = '1' then
-            PAGE_NUMBER <= 512;--1939;
+            PAGE_NUMBER <= 1939;
             PAGE_UP_SYNC <= '0';
             PAGE_UP_SYNC_2 <= '0';
             PAGE_DOWN_SYNC <= '0';
@@ -183,7 +177,7 @@ DUAL_PORT_RAM: entity work.DPR_IP_VARIATION
     port map(
     data => DPR_WRITE_DATA,
     rdaddress => DPR_READ_ADDRESS,
-    rdclock => CLK_25,
+    rdclock => CLK_VIDEO,
     wraddress => DPR_WRITE_ADDRESS,
     wrclock => CLK_27_750,
     wren => DPR_WRITE_EN,
@@ -192,7 +186,7 @@ DUAL_PORT_RAM: entity work.DPR_IP_VARIATION
 DISPLAY_GENERATOR: entity work.DISPLAY_GENERATOR
     port map(
     RESET => RESET,
-    CLK => CLK_25,
+    CLK => CLK_VIDEO,
     
     MEMORY_DATA_IN => DPR_READ_DATA,
     MEMORY_ADDRESS_OUT => DPR_READ_ADDRESS,
@@ -210,7 +204,7 @@ DISPLAY_GENERATOR: entity work.DISPLAY_GENERATOR
 VGA: entity work.VGA
     port map(
     RESET => RESET,
-    CLK => CLK_25,
+    CLK => CLK_VIDEO,
     R_IN => R,
     G_IN => G,
     B_IN => B,

@@ -24,6 +24,8 @@ entity TXT_DATA_PROCESSOR is
 end entity TXT_DATA_PROCESSOR;
 
 architecture RTL of TXT_DATA_PROCESSOR is
+constant BLANK_CHAR : std_logic_vector(6 downto 0) := "0100000";
+
 type T_PAGE_AND_SUBCODE_CACHE is array (integer range <>) of std_logic_vector(31 downto 0);
 signal PAGE_AND_SUBCODE_CACHE : T_PAGE_AND_SUBCODE_CACHE(7 downto 0);
 signal GOOD_HEADER_RECEIVED : std_logic_vector(7 downto 0);
@@ -251,7 +253,7 @@ MAIN: process(CLK_27_750, RESET)
                         if ODD_PARITY_VALID = '1' then
                             WORD_OUT <= ODD_PARITY_DECODED;
                         else
-                            WORD_OUT <= "0100000";
+                            WORD_OUT <= BLANK_CHAR;
                         end if;
                         WORD_CLOCK_OUT <= '1';
                     else

@@ -44,13 +44,16 @@ signal H_ACTIVE : std_logic;
 constant V_COUNT_MAX : integer := V_SIZE + V_FRONT_PORCH + V_SYNC_PULSE + V_BACK_PORCH - 1;
 signal V_COUNT : integer range 0 to V_COUNT_MAX;
 signal V_ACTIVE : std_logic;
-signal VIDEO_BORDER : std_logic;
 signal VIDEO_ACTIVE : std_logic;
 
+constant TEXT_BORDER_SIZE : integer := (V_SIZE * 10) / 9;
+signal VIDEO_BORDER : std_logic;
+
 begin
---VIDEO_BORDER <= '1' when H_COUNT = 1 or H_COUNT = H_SIZE or H_COUNT = H_SIZE / 2 - 320 or H_COUNT = H_SIZE / 2 + 320 or V_COUNT = 0 or V_COUNT = V_SIZE - 1 else '0';
+
 -- Draw border around the area which should be adjusted to 4:3 size on the monitor for proper text aspect ratio
-VIDEO_BORDER <= '1' when H_COUNT = H_SIZE / 2 - 320 or H_COUNT = H_SIZE / 2 + 320 or ((V_COUNT = 0 or V_COUNT = V_SIZE - 1) and H_COUNT > H_SIZE / 2 - 320 and H_COUNT < H_SIZE / 2 + 320) else '0';
+VIDEO_BORDER <= '1' when H_COUNT = (H_SIZE - TEXT_BORDER_SIZE) / 2 or H_COUNT = (H_SIZE + TEXT_BORDER_SIZE) / 2 or
+                        ((V_COUNT = 0 or V_COUNT = V_SIZE - 1) and H_COUNT > (H_SIZE - TEXT_BORDER_SIZE) / 2 and H_COUNT < (H_SIZE + TEXT_BORDER_SIZE) / 2) else '0';
 
 VIDEO_ACTIVE <= H_ACTIVE and V_ACTIVE;
 R_OUT <= R_IN or VIDEO_BORDER when VIDEO_ACTIVE = '1' else '0';
