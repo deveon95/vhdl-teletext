@@ -30,6 +30,7 @@ constant H_SIZE : integer := 720;
 constant V_SIZE : integer := 576;
 constant H_CHAR_SIZE : integer := 6;        -- This parameter must be set to suit the CGROM
 constant V_CHAR_SIZE : integer := 11;
+constant V_CHAR_SIZE_BITS : integer := 4;       -- Number of bits required for std_logic_vector representation of the above
 constant MOSAIC_DIV1 : integer := 3;
 constant MOSAIC_DIV2 : integer := 7;
 constant TEXT_LINES : integer := 25;
@@ -37,13 +38,14 @@ constant TEXT_COLS : integer := 40;
 constant V_PIXEL_STRETCH : integer := 2;
 constant H_PIXEL_STRETCH : integer := 2;
 
-constant DISPLAY_AREA_WIDTH : integer := H_CHAR_SIZE * 2 * TEXT_COLS;
-constant DISPLAY_AREA_HEIGHT : integer := V_CHAR_SIZE * 2 * TEXT_LINES;
+constant DISPLAY_AREA_WIDTH : integer := H_CHAR_SIZE * H_PIXEL_STRETCH * TEXT_COLS;
+constant DISPLAY_AREA_HEIGHT : integer := V_CHAR_SIZE * V_PIXEL_STRETCH * TEXT_LINES;
 constant DISPLAY_AREA_LEFT : integer := (H_SIZE - DISPLAY_AREA_WIDTH) / 2;
 constant DISPLAY_AREA_RIGHT : integer := (H_SIZE + DISPLAY_AREA_WIDTH) / 2;
 constant DISPLAY_AREA_TOP : integer := (V_SIZE - DISPLAY_AREA_HEIGHT) / 2;
 constant DISPLAY_AREA_BOTTOM : integer := (V_SIZE + DISPLAY_AREA_HEIGHT) / 2;
 
+signal MEMORY_DATA : std_logic_vector(6 downto 0);
 signal PIXEL_COUNTER : integer range 0 to H_SIZE - 1;
 signal ROW_COUNTER : integer range 0 to V_SIZE - 1;
 signal V_PIXEL_STRETCH_COUNTER : integer range 0 to V_PIXEL_STRETCH - 1;
@@ -51,6 +53,7 @@ signal H_PIXEL_STRETCH_COUNTER : integer range 0 to V_PIXEL_STRETCH - 1;
 signal CHAR_COUNTER : integer range 0 to TEXT_LINES * TEXT_COLS - 1;
 signal CHAR_COL_COUNTER, CHAR_COL_COUNTER_D : integer range 0 to H_CHAR_SIZE - 1;
 signal CHAR_ROW_COUNTER : integer range 0 to V_CHAR_SIZE - 1;
+signal CHAR_ROW_SELECT : integer range 0 to V_CHAR_SIZE - 1;
 signal IN_DISPLAY_AREA : std_logic;
 signal CGROM_LINE : std_logic_vector(4 downto 0);
 signal CHAR_TO_DISPLAY : std_logic_vector(6 downto 0);
@@ -74,6 +77,7 @@ signal FLASH : std_logic;
 signal FLASH_TIMER : integer range 0 to FLASH_DURATION;
 signal FLASH_TIMER_PULSE : std_logic;
 signal MOSAIC_ENABLE : std_logic;
+signal NEXT_MOSAIC_ENABLE : std_logic;
 signal MOSAIC_HOLD : std_logic;
 signal NEXT_MOSAIC_HOLD : std_logic;
 signal CONTIGUOUS : std_logic;
@@ -81,19 +85,25 @@ signal MOSAIC : std_logic_vector(5 downto 0);
 signal MOSAIC_PIXEL : std_logic;
 signal LAST_MOSAIC_PIXEL : std_logic;
 signal LAST_MOSAIC : std_logic_vector(5 downto 0);
+signal DH_THIS_ROW : std_logic;
+signal DH_LAST_ROW : std_logic;
+signal DH : std_logic;
+signal NEXT_DH : std_logic;
 signal CURRENT_PIXEL : std_logic;
 signal DISP_ATTRIBUTE : std_logic;
 
 constant BLANK_CHAR : std_logic_vector(6 downto 0) := "0100000";
 
 begin
-    MEMORY_ADDRESS_OUT <= std_logic_vector(to_unsigned(CHAR_COUNTER,10));
+    -- Read from previous row when last line was double height
+    MEMORY_ADDRESS_OUT <= std_logic_vector(to_unsigned(CHAR_COUNTER,10)) when DH_LAST_ROW = '0' else std_logic_vector(to_unsigned(CHAR_COUNTER - TEXT_COLS,10));
     
+    MEMORY_DATA <= MEMORY_DATA_IN;
 
 CGROM: entity work.CGROM
     port map(
     ADDRESS_IN => CHAR_TO_DISPLAY,
-    ROW_SELECT_IN => std_logic_vector(to_unsigned(CHAR_ROW_COUNTER - 1,4)),
+    ROW_SELECT_IN => std_logic_vector(to_unsigned(CHAR_ROW_SELECT - 1,4)),
     DATA_OUT => CGROM_LINE);
     
     -- Generate the mosaic character
@@ -106,20 +116,22 @@ CGROM: entity work.CGROM
     MOSAIC(3) <= CHAR_TO_DISPLAY(3);
     MOSAIC(4) <= CHAR_TO_DISPLAY(4);
     MOSAIC(5) <= CHAR_TO_DISPLAY(6);
-    MOSAIC_PIXEL <= '0' when CONTIGUOUS = '0' and (CHAR_COL_COUNTER_D = 0 or CHAR_COL_COUNTER_D = H_CHAR_SIZE / 2 or CHAR_ROW_COUNTER = MOSAIC_DIV1 or CHAR_ROW_COUNTER = MOSAIC_DIV2-1 or CHAR_ROW_COUNTER = V_CHAR_SIZE-1) else
-                    MOSAIC(0) when CHAR_COL_COUNTER_D < H_CHAR_SIZE / 2 and CHAR_ROW_COUNTER < MOSAIC_DIV1 else
-                    MOSAIC(1) when CHAR_COL_COUNTER_D >= H_CHAR_SIZE / 2 and CHAR_ROW_COUNTER < MOSAIC_DIV1 else
-                    MOSAIC(2) when CHAR_COL_COUNTER_D < H_CHAR_SIZE / 2 and CHAR_ROW_COUNTER < MOSAIC_DIV2 else
-                    MOSAIC(3) when CHAR_COL_COUNTER_D >= H_CHAR_SIZE / 2 and CHAR_ROW_COUNTER < MOSAIC_DIV2 else
-                    MOSAIC(4) when CHAR_COL_COUNTER_D < H_CHAR_SIZE / 2 and CHAR_ROW_COUNTER < V_CHAR_SIZE else
-                    MOSAIC(5) when CHAR_COL_COUNTER_D >= H_CHAR_SIZE / 2 and CHAR_ROW_COUNTER < V_CHAR_SIZE else '0';
-    LAST_MOSAIC_PIXEL <= '0' when CONTIGUOUS = '0' and (CHAR_COL_COUNTER_D = 0 or CHAR_COL_COUNTER_D = H_CHAR_SIZE / 2 or CHAR_ROW_COUNTER = MOSAIC_DIV1 or CHAR_ROW_COUNTER = MOSAIC_DIV2-1 or CHAR_ROW_COUNTER = V_CHAR_SIZE-1) else
-                    LAST_MOSAIC(0) when CHAR_COL_COUNTER_D < H_CHAR_SIZE / 2 and CHAR_ROW_COUNTER < MOSAIC_DIV1 else
-                    LAST_MOSAIC(1) when CHAR_COL_COUNTER_D >= H_CHAR_SIZE / 2 and CHAR_ROW_COUNTER < MOSAIC_DIV1 else
-                    LAST_MOSAIC(2) when CHAR_COL_COUNTER_D < H_CHAR_SIZE / 2 and CHAR_ROW_COUNTER < MOSAIC_DIV2 else
-                    LAST_MOSAIC(3) when CHAR_COL_COUNTER_D >= H_CHAR_SIZE / 2 and CHAR_ROW_COUNTER < MOSAIC_DIV2 else
-                    LAST_MOSAIC(4) when CHAR_COL_COUNTER_D < H_CHAR_SIZE / 2 and CHAR_ROW_COUNTER < V_CHAR_SIZE else
-                    LAST_MOSAIC(5) when CHAR_COL_COUNTER_D >= H_CHAR_SIZE / 2 and CHAR_ROW_COUNTER < V_CHAR_SIZE else '0';
+    MOSAIC_PIXEL <= '0' when CONTIGUOUS = '0' and (CHAR_COL_COUNTER_D = 0 or CHAR_COL_COUNTER_D = H_CHAR_SIZE / 2 or CHAR_ROW_SELECT = MOSAIC_DIV1 or CHAR_ROW_SELECT = MOSAIC_DIV2-1 or CHAR_ROW_SELECT = V_CHAR_SIZE-1) else
+                    MOSAIC(0) when CHAR_COL_COUNTER_D < H_CHAR_SIZE / 2 and CHAR_ROW_SELECT < MOSAIC_DIV1 else
+                    MOSAIC(1) when CHAR_COL_COUNTER_D >= H_CHAR_SIZE / 2 and CHAR_ROW_SELECT < MOSAIC_DIV1 else
+                    MOSAIC(2) when CHAR_COL_COUNTER_D < H_CHAR_SIZE / 2 and CHAR_ROW_SELECT < MOSAIC_DIV2 else
+                    MOSAIC(3) when CHAR_COL_COUNTER_D >= H_CHAR_SIZE / 2 and CHAR_ROW_SELECT < MOSAIC_DIV2 else
+                    MOSAIC(4) when CHAR_COL_COUNTER_D < H_CHAR_SIZE / 2 and CHAR_ROW_SELECT < V_CHAR_SIZE else
+                    MOSAIC(5) when CHAR_COL_COUNTER_D >= H_CHAR_SIZE / 2 and CHAR_ROW_SELECT < V_CHAR_SIZE else '0';
+    LAST_MOSAIC_PIXEL <= '0' when CONTIGUOUS = '0' and (CHAR_COL_COUNTER_D = 0 or CHAR_COL_COUNTER_D = H_CHAR_SIZE / 2 or CHAR_ROW_SELECT = MOSAIC_DIV1 or CHAR_ROW_SELECT = MOSAIC_DIV2-1 or CHAR_ROW_SELECT = V_CHAR_SIZE-1) else
+                    LAST_MOSAIC(0) when CHAR_COL_COUNTER_D < H_CHAR_SIZE / 2 and CHAR_ROW_SELECT < MOSAIC_DIV1 else
+                    LAST_MOSAIC(1) when CHAR_COL_COUNTER_D >= H_CHAR_SIZE / 2 and CHAR_ROW_SELECT < MOSAIC_DIV1 else
+                    LAST_MOSAIC(2) when CHAR_COL_COUNTER_D < H_CHAR_SIZE / 2 and CHAR_ROW_SELECT < MOSAIC_DIV2 else
+                    LAST_MOSAIC(3) when CHAR_COL_COUNTER_D >= H_CHAR_SIZE / 2 and CHAR_ROW_SELECT < MOSAIC_DIV2 else
+                    LAST_MOSAIC(4) when CHAR_COL_COUNTER_D < H_CHAR_SIZE / 2 and CHAR_ROW_SELECT < V_CHAR_SIZE else
+                    LAST_MOSAIC(5) when CHAR_COL_COUNTER_D >= H_CHAR_SIZE / 2 and CHAR_ROW_SELECT < V_CHAR_SIZE else '0';
+                    
+    CHAR_ROW_SELECT <= to_integer(unsigned(std_logic_vector(to_unsigned(CHAR_ROW_COUNTER, V_CHAR_SIZE_BITS))(V_CHAR_SIZE_BITS - 1 downto 1))) when DH = '1' and DH_THIS_ROW = '1' else to_integer(unsigned(std_logic_vector(to_unsigned(CHAR_ROW_COUNTER + V_CHAR_SIZE, V_CHAR_SIZE_BITS + 1))(V_CHAR_SIZE_BITS downto 1))) when DH = '1' and DH_LAST_ROW = '1' else CHAR_ROW_COUNTER;
                     
 ACTIVE_AREA_CONTROLLER: process(CLK, RESET)
     begin
@@ -201,6 +213,7 @@ DISPLAY_GEN: process(CLK, RESET)
             BG_B_D <= '0';
             CHAR_TO_DISPLAY <= (others => '0');
             MOSAIC_ENABLE <= '0';
+            NEXT_MOSAIC_ENABLE <= '0';
             MOSAIC_HOLD <= '0';
             NEXT_MOSAIC_HOLD <= '0';
             CONCEAL <= '0';
@@ -210,6 +223,10 @@ DISPLAY_GEN: process(CLK, RESET)
             CONTIGUOUS <= '1';
             LAST_MOSAIC <= (others => '0');
             NEXT_H_PIXEL_D <= '0';
+            DH_LAST_ROW <= '0';
+            DH_THIS_ROW <= '0';
+            DH <= '0';
+            NEXT_DH <= '0';
         elsif rising_edge(CLK) then
             DISP_ATTRIBUTE <= ((NOT CONCEAL) OR REVEAL_IN) AND ((NOT FLASH) OR FLASH_TIMER_PULSE);
             NEXT_H_PIXEL_D <= NEXT_H_PIXEL;
@@ -241,25 +258,36 @@ DISPLAY_GEN: process(CLK, RESET)
                     -- proceed to next part of character set
                     CHAR_COUNTER <= CHAR_COUNTER + TEXT_COLS;
                     CHAR_ROW_COUNTER <= 0;
+                    DH_LAST_ROW <= DH_THIS_ROW AND (NOT DH_LAST_ROW);
+                    DH_THIS_ROW <= '0';
                 end if;
             end if;
             
             if NEXT_H_PIXEL = '1' then
                 if CHAR_COL_COUNTER = 0 then
                     CHAR_COL_COUNTER <= CHAR_COL_COUNTER + 1;
-                    CHAR_TO_DISPLAY <= MEMORY_DATA_IN;
+                    CHAR_TO_DISPLAY <= MEMORY_DATA;
                     FG_R <= NEXT_FG_R;
                     FG_G <= NEXT_FG_G;
                     FG_B <= NEXT_FG_B;
                     CONCEAL <= NEXT_CONCEAL;
+                    MOSAIC_ENABLE <= NEXT_MOSAIC_ENABLE;
                     MOSAIC_HOLD <= NEXT_MOSAIC_HOLD;
-                    case MEMORY_DATA_IN is
+                    DH <= NEXT_DH;
+                    case MEMORY_DATA is
                     when "0000001"|"0000010"|"0000011"|"0000100"|"0000101"|"0000110"|"0000111" =>
-                        NEXT_FG_R <= MEMORY_DATA_IN(0);
-                        NEXT_FG_G <= MEMORY_DATA_IN(1);
-                        NEXT_FG_B <= MEMORY_DATA_IN(2);
-                        MOSAIC_ENABLE <= '0';
+                        NEXT_FG_R <= MEMORY_DATA(0);
+                        NEXT_FG_G <= MEMORY_DATA(1);
+                        NEXT_FG_B <= MEMORY_DATA(2);
+                        NEXT_MOSAIC_ENABLE <= '0';
                         NEXT_CONCEAL <= '0';
+                    when "0001100" =>
+                        -- Normal Height (Set-After)
+                        NEXT_DH <= '0';
+                    when "0001101" =>
+                        -- Double Height (Set-After)
+                        DH_THIS_ROW <= '1' AND (NOT DH_LAST_ROW);
+                        NEXT_DH <= '1';
                     when "0001000" =>
                         -- Flash (Set-After)
                         FLASH <= '1';
@@ -267,10 +295,10 @@ DISPLAY_GEN: process(CLK, RESET)
                         -- Steady (Set-At)
                         FLASH <= '0';
                     when "0010001"|"0010010"|"0010011"|"0010100"|"0010101"|"0010110"|"0010111" =>
-                        NEXT_FG_R <= MEMORY_DATA_IN(0);
-                        NEXT_FG_G <= MEMORY_DATA_IN(1);
-                        NEXT_FG_B <= MEMORY_DATA_IN(2);
-                        MOSAIC_ENABLE <= '1';
+                        NEXT_FG_R <= MEMORY_DATA(0);
+                        NEXT_FG_G <= MEMORY_DATA(1);
+                        NEXT_FG_B <= MEMORY_DATA(2);
+                        NEXT_MOSAIC_ENABLE <= '1';
                         NEXT_CONCEAL <= '0';
                     when "0011000" =>
                         -- Conceal (Set-At)
@@ -298,7 +326,9 @@ DISPLAY_GEN: process(CLK, RESET)
                         BG_G <= NEXT_FG_G;
                         BG_B <= NEXT_FG_B;
                     when others =>
-                        
+                        if NEXT_DH = '0' and DH_LAST_ROW = '1' then
+                            CHAR_TO_DISPLAY <= BLANK_CHAR;
+                        end if;
                     end case;
                 else
                     CHAR_COL_COUNTER <= CHAR_COL_COUNTER + 1;
@@ -349,6 +379,7 @@ DISPLAY_GEN: process(CLK, RESET)
                 BG_G <= '0';
                 BG_B <= '0';
                 MOSAIC_ENABLE <= '0';
+                NEXT_MOSAIC_ENABLE <= '0';
                 MOSAIC_HOLD <= '0';
                 NEXT_MOSAIC_HOLD <= '0';
                 CONCEAL <= '0';
@@ -356,6 +387,8 @@ DISPLAY_GEN: process(CLK, RESET)
                 FLASH <= '0';
                 CONTIGUOUS <= '1';
                 LAST_MOSAIC <= (others => '0');
+                DH <= '0';
+                NEXT_DH <= '0';
             end if;
         end if;
     end process;
