@@ -23,11 +23,11 @@ architecture RTL of VGA is
 constant H_SIZE : integer := 720;
 constant H_FRONT_PORCH : integer := 16;
 constant H_SYNC_PULSE : integer := 96;
-constant H_BACK_PORCH : integer := 48;
+constant H_BACK_PORCH : integer := 16;
 constant V_SIZE : integer := 576;
-constant V_FRONT_PORCH : integer := 11;
-constant V_SYNC_PULSE : integer := 2;
-constant V_BACK_PORCH : integer := 31;
+constant V_FRONT_PORCH : integer := 23;
+constant V_SYNC_PULSE : integer := 3;
+constant V_BACK_PORCH : integer := 23;
 -- Parameters for 640x480 resolution
 --constant H_SIZE : integer := 640;
 --constant H_FRONT_PORCH : integer := 16;

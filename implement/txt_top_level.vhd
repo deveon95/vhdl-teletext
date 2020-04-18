@@ -1,5 +1,5 @@
--- ********** Use Clock Controller to set CLK1 to 27750 and CLK2 to 32500 for 60Hz on C10 Dev Board **
--- ********** Use Clock Controller to set CLK2 to 27750 and CLK2 to 27300 for 50Hz
+-- ********** Use Clock Controller to set CLK1 to 27750 and CLK2 to 31000 for 60Hz on C10 Dev Board **
+-- ********** Use Clock Controller to set CLK2 to 27750 and CLK2 to 26500 for 50Hz
 
 library ieee;
 use ieee.std_logic_1164.all;
