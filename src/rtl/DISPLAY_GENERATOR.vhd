@@ -30,13 +30,15 @@ constant H_SIZE : integer := 720;
 constant V_SIZE : integer := 576;
 constant H_CHAR_SIZE : integer := 6;        -- This parameter must be set to suit the CGROM
 constant V_CHAR_SIZE : integer := 11;
-constant V_CHAR_SIZE_BITS : integer := 4;       -- Number of bits required for std_logic_vector representation of the above
+constant V_CHAR_SIZE_BITS : integer := 4;   -- Number of bits required for std_logic_vector representation of the above
 constant MOSAIC_DIV1 : integer := 3;
 constant MOSAIC_DIV2 : integer := 7;
 constant TEXT_LINES : integer := 25;
 constant TEXT_COLS : integer := 40;
 constant V_PIXEL_STRETCH : integer := 2;
 constant H_PIXEL_STRETCH : integer := 2;
+-- Needed for some non-compliant services
+constant FOREGROUND_BLACK_ENABLE : std_logic := '0';
 
 constant DISPLAY_AREA_WIDTH : integer := H_CHAR_SIZE * H_PIXEL_STRETCH * TEXT_COLS;
 constant DISPLAY_AREA_HEIGHT : integer := V_CHAR_SIZE * V_PIXEL_STRETCH * TEXT_LINES;
@@ -81,6 +83,7 @@ signal NEXT_MOSAIC_ENABLE : std_logic;
 signal MOSAIC_HOLD : std_logic;
 signal NEXT_MOSAIC_HOLD : std_logic;
 signal CONTIGUOUS : std_logic;
+signal LAST_CONTIGUOUS : std_logic;
 signal MOSAIC : std_logic_vector(5 downto 0);
 signal MOSAIC_PIXEL : std_logic;
 signal LAST_MOSAIC_PIXEL : std_logic;
@@ -123,7 +126,7 @@ CGROM: entity work.CGROM
                     MOSAIC(3) when CHAR_COL_COUNTER_D >= H_CHAR_SIZE / 2 and CHAR_ROW_SELECT < MOSAIC_DIV2 else
                     MOSAIC(4) when CHAR_COL_COUNTER_D < H_CHAR_SIZE / 2 and CHAR_ROW_SELECT < V_CHAR_SIZE else
                     MOSAIC(5) when CHAR_COL_COUNTER_D >= H_CHAR_SIZE / 2 and CHAR_ROW_SELECT < V_CHAR_SIZE else '0';
-    LAST_MOSAIC_PIXEL <= '0' when CONTIGUOUS = '0' and (CHAR_COL_COUNTER_D = 0 or CHAR_COL_COUNTER_D = H_CHAR_SIZE / 2 or CHAR_ROW_SELECT = MOSAIC_DIV1 or CHAR_ROW_SELECT = MOSAIC_DIV2-1 or CHAR_ROW_SELECT = V_CHAR_SIZE-1) else
+    LAST_MOSAIC_PIXEL <= '0' when LAST_CONTIGUOUS = '0' and (CHAR_COL_COUNTER_D = 0 or CHAR_COL_COUNTER_D = H_CHAR_SIZE / 2 or CHAR_ROW_SELECT = MOSAIC_DIV1 or CHAR_ROW_SELECT = MOSAIC_DIV2-1 or CHAR_ROW_SELECT = V_CHAR_SIZE-1) else
                     LAST_MOSAIC(0) when CHAR_COL_COUNTER_D < H_CHAR_SIZE / 2 and CHAR_ROW_SELECT < MOSAIC_DIV1 else
                     LAST_MOSAIC(1) when CHAR_COL_COUNTER_D >= H_CHAR_SIZE / 2 and CHAR_ROW_SELECT < MOSAIC_DIV1 else
                     LAST_MOSAIC(2) when CHAR_COL_COUNTER_D < H_CHAR_SIZE / 2 and CHAR_ROW_SELECT < MOSAIC_DIV2 else
@@ -221,6 +224,7 @@ DISPLAY_GEN: process(CLK, RESET)
             FLASH <= '0';
             FLASH_TIMER <= 0;
             CONTIGUOUS <= '1';
+            LAST_CONTIGUOUS <= '1';
             LAST_MOSAIC <= (others => '0');
             NEXT_H_PIXEL_D <= '0';
             DH_LAST_ROW <= '0';
@@ -281,11 +285,29 @@ DISPLAY_GEN: process(CLK, RESET)
                         NEXT_FG_B <= MEMORY_DATA(2);
                         NEXT_MOSAIC_ENABLE <= '0';
                         NEXT_CONCEAL <= '0';
+                    when "0000000" =>
+                        if FOREGROUND_BLACK_ENABLE = '1' then
+                            NEXT_FG_R <= MEMORY_DATA(0);
+                            NEXT_FG_G <= MEMORY_DATA(1);
+                            NEXT_FG_B <= MEMORY_DATA(2);
+                            NEXT_MOSAIC_ENABLE <= '0';
+                            NEXT_CONCEAL <= '0';
+                        end if;
                     when "0001100" =>
                         -- Normal Height (Set-After)
+                        if NEXT_DH = '1' then
+                            -- Clear held mosaic only if new size is different
+                            LAST_MOSAIC <= (others => '0');
+                            LAST_CONTIGUOUS <= '1';
+                        end if;
                         NEXT_DH <= '0';
                     when "0001101" =>
                         -- Double Height (Set-After)
+                        if NEXT_DH = '0' then
+                            -- Clear held mosaic only if new size is different
+                            LAST_MOSAIC <= (others => '0');
+                            LAST_CONTIGUOUS <= '1';
+                        end if;
                         DH_THIS_ROW <= '1' AND (NOT DH_LAST_ROW);
                         NEXT_DH <= '1';
                     when "0001000" =>
@@ -300,6 +322,14 @@ DISPLAY_GEN: process(CLK, RESET)
                         NEXT_FG_B <= MEMORY_DATA(2);
                         NEXT_MOSAIC_ENABLE <= '1';
                         NEXT_CONCEAL <= '0';
+                    when "0010000" =>
+                        if FOREGROUND_BLACK_ENABLE = '1' then
+                            NEXT_FG_R <= MEMORY_DATA(0);
+                            NEXT_FG_G <= MEMORY_DATA(1);
+                            NEXT_FG_B <= MEMORY_DATA(2);
+                            NEXT_MOSAIC_ENABLE <= '1';
+                            NEXT_CONCEAL <= '0';
+                        end if;
                     when "0011000" =>
                         -- Conceal (Set-At)
                         CONCEAL <= '1';
@@ -352,7 +382,9 @@ DISPLAY_GEN: process(CLK, RESET)
                 elsif CHAR_TO_DISPLAY(5) = '1' then
                     -- Display mosaic when MOSAIC_ENABLE = '1' and a mosaic address is in memory
                     CURRENT_PIXEL <= MOSAIC_PIXEL;
+                    -- Store mosaic and contiguousity in case of held mosaic
                     LAST_MOSAIC <= MOSAIC;
+                    LAST_CONTIGUOUS <= CONTIGUOUS;
                 else
                     -- Put mosaic hold stuff here
                     if MOSAIC_HOLD = '1' then
@@ -386,6 +418,7 @@ DISPLAY_GEN: process(CLK, RESET)
                 NEXT_CONCEAL <= '0';
                 FLASH <= '0';
                 CONTIGUOUS <= '1';
+                LAST_CONTIGUOUS <= '1';
                 LAST_MOSAIC <= (others => '0');
                 DH <= '0';
                 NEXT_DH <= '0';

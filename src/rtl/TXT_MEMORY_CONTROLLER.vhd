@@ -92,8 +92,8 @@ MAIN: process(CLK_27_750, RESET)
             case STATE is
             when WAIT_FOR_FRAME =>
                 MEM_WREN_OUT <= '0';
-                -- Show rolling header when waiting for page
-                if FRAME_VALID_IN = '1' and MAGAZINE_IN = REQ_MAGAZINE_IN 
+                -- Show rolling header when waiting for page. CONTROL_BITS_IN(7) is Magazine Serial
+                if FRAME_VALID_IN = '1' and (MAGAZINE_IN = REQ_MAGAZINE_IN or CONTROL_BITS_IN(7) = '1')
                 and (ROW_INTEGER = 0) then
                     ADDRESS_COUNTER <= LINE_START_ADDRESS;
                     MEMORY_ERASE_REQUIRED <= '0';
