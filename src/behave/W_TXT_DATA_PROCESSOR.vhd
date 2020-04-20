@@ -38,6 +38,7 @@ signal RX_COUNTER : integer range 0 to NUMBER_OF_BYTES_MAX;
 
 signal DATA_RECEIVED : std_logic := '0';
 signal EXPECT_DATA_RECEIVED : std_logic := '0';
+signal HEADER_PACKET : std_logic := '0';
 
 begin
     
@@ -68,6 +69,7 @@ UUT: entity work.TXT_DATA_PROCESSOR
             PARALLEL_DATA <= (others => '0');
             PARALLEL_CLOCK <= '0';
             PARALLEL_FRAME_VALID <= '0';
+            HEADER_PACKET <= '0';
             wait until rising_edge(CLK_27_750);
             wait until rising_edge(CLK_27_750);
             RESET <= '0';
@@ -87,13 +89,16 @@ UUT: entity work.TXT_DATA_PROCESSOR
                 "01101110","00100000","11110100","11101001","01101101","11100101","00100000","11100110",
                 "11101111","11110010","00100000","11110100","01101000","11100101","00100000","00100000");
                 EXPECT_DATA_RECEIVED <= '1';
+                HEADER_PACKET <= '1';
             elsif run("T002_NORMAL_PACKET_WITH_HEADER") then
+                -- Header packet required first to enable reception of data packet
                 TEST_ARRAY <= ("01110011","00010101",
                 "00010101","00010101","00010101","11010000","00010101","00010101","01001001","00010101",
                 "11110100","11101111","00100000","01001100","11101111","01110011","00100000","11000001",
                 "01101110","01100111","11100101","11101100","11100101","01110011","00100000","11101001",
                 "01101110","00100000","11110100","11101001","01101101","11100101","00100000","11100110",
                 "11101111","11110010","00100000","11110100","01101000","11100101","00100000","00100000");
+                HEADER_PACKET <= '1';
                 wait until rising_edge(CLK_27_750);
                 PARALLEL_FRAME_VALID <= '1';
                 wait until rising_edge(CLK_27_750);
@@ -115,6 +120,7 @@ UUT: entity work.TXT_DATA_PROCESSOR
                 "01101110","01100111","11100101","11101100","11100101","01110011","00100000","11101001",
                 "01101110","00100000","11110100","11101001","01101101","11100101","00100000","11100110",
                 "11101111","11110010","00100000","11110100","01101000","11100101","00100000","00100000");
+                HEADER_PACKET <= '0';
                 EXPECT_DATA_RECEIVED <= '1';
             elsif run("T003_NORMAL_PACKET_NO_HEADER") then
                 -- Valid packet but corresponding header has not been received, so packet should be ignored
@@ -124,15 +130,17 @@ UUT: entity work.TXT_DATA_PROCESSOR
                 "01101110","01100111","11100101","11101100","11100101","01110011","00100000","11101001",
                 "01101110","00100000","11110100","11101001","01101101","11100101","00100000","11100110",
                 "11101111","11110010","00100000","11110100","01101000","11100101","00100000","00100000");
+                HEADER_PACKET <= '0';
                 EXPECT_DATA_RECEIVED <= '0';
             elsif run("T004_BAD_PACKET") then
-                -- Just a reversal of T001
+                -- Just a reversal of T003
                 TEST_ARRAY <= ("01101101","00011100",
                 "01100001","00110010","11110111","01110110","00100110","11110111","01110110","00000100",
                 "00101111","11110111","00000100","00110010","11110111","11001110","00000100","10000011",
                 "01110110","11100110","10100111","00110111","10100111","11001110","00000100","10010111",
                 "01110110","00000100","00101111","10010111","10110110","10100111","00000100","01100111",
                 "11110111","01001111","00000100","00101111","00010110","10100111","00000100","00000100");
+                HEADER_PACKET <= '0';
                 EXPECT_DATA_RECEIVED <= '0';
             elsif run("T005_HEADER_PACKET_BAD_PAGE_ADDRESS") then
                 TEST_ARRAY <= ("01110011","00010101",
@@ -141,6 +149,7 @@ UUT: entity work.TXT_DATA_PROCESSOR
                 "01101110","01100111","11100101","11101100","11100101","01110011","00100000","11101001",
                 "01101110","00100000","11110100","11101001","01101101","11100101","00100000","11100110",
                 "11101111","11110010","00100000","11110100","01101000","11100101","00100000","00100000");
+                HEADER_PACKET <= '1';
                 EXPECT_DATA_RECEIVED <= '0';
             end if;
             
@@ -170,8 +179,20 @@ UUT: entity work.TXT_DATA_PROCESSOR
             
             assert DATA_RECEIVED = EXPECT_DATA_RECEIVED report "No data received, or data received when it shouldn't" severity error;
             
-            report "Data checking not implemented" severity warning;
-            --assert RX_DATA = TEST_ARRAY(6 to NUMBER_OF_BYTES_MAX) report "Received data does not match transmitted data" severity error;
+            -- Check data if data was received
+            if DATA_RECEIVED = '1' then
+                if HEADER_PACKET = '1' then
+                    -- Different checking loop for header packet because first few bytes are not written to the dual port RAM
+                    for RX_CHECK_COUNTER in 0 to NUMBER_OF_BYTES_MAX - 10 loop
+                        assert RX_DATA(RX_CHECK_COUNTER)(6 downto 0) = TEST_ARRAY(RX_CHECK_COUNTER + 10)(6 downto 0) report "RX data does not match TX data, No: " & to_string(RX_CHECK_COUNTER) & " Expected: " & to_string(TEST_ARRAY(RX_CHECK_COUNTER + 2)(6 downto 0)) & " Received: " & to_string(RX_DATA(RX_CHECK_COUNTER)(6 downto 0)) severity error;
+                    end loop;
+                else
+                    -- Checking loop for non-header packet
+                    for RX_CHECK_COUNTER in 0 to NUMBER_OF_BYTES_MAX - 2 loop
+                        assert RX_DATA(RX_CHECK_COUNTER)(6 downto 0) = TEST_ARRAY(RX_CHECK_COUNTER + 2)(6 downto 0) report "RX data does not match TX data, No: " & to_string(RX_CHECK_COUNTER) & " Expected: " & to_string(TEST_ARRAY(RX_CHECK_COUNTER + 2)(6 downto 0)) & " Received: " & to_string(RX_DATA(RX_CHECK_COUNTER)(6 downto 0)) severity error;
+                    end loop;
+                end if;
+            end if;
             report "Page number, subcode and control bit output checking not implemented" severity warning;
             
         end loop;
