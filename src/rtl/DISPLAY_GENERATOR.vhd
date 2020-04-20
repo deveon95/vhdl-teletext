@@ -134,7 +134,8 @@ CGROM: entity work.CGROM
                     LAST_MOSAIC(4) when CHAR_COL_COUNTER_D < H_CHAR_SIZE / 2 and CHAR_ROW_SELECT < V_CHAR_SIZE else
                     LAST_MOSAIC(5) when CHAR_COL_COUNTER_D >= H_CHAR_SIZE / 2 and CHAR_ROW_SELECT < V_CHAR_SIZE else '0';
                     
-    CHAR_ROW_SELECT <= to_integer(unsigned(std_logic_vector(to_unsigned(CHAR_ROW_COUNTER, V_CHAR_SIZE_BITS))(V_CHAR_SIZE_BITS - 1 downto 1))) when DH = '1' and DH_THIS_ROW = '1' else to_integer(unsigned(std_logic_vector(to_unsigned(CHAR_ROW_COUNTER + V_CHAR_SIZE, V_CHAR_SIZE_BITS + 1))(V_CHAR_SIZE_BITS downto 1))) when DH = '1' and DH_LAST_ROW = '1' else CHAR_ROW_COUNTER;
+    -- CGROM row selector for double-height characters
+    CHAR_ROW_SELECT <= to_integer(to_unsigned(CHAR_ROW_COUNTER, V_CHAR_SIZE_BITS)(V_CHAR_SIZE_BITS - 1 downto 1)) when DH = '1' and DH_THIS_ROW = '1' else to_integer(to_unsigned(CHAR_ROW_COUNTER + V_CHAR_SIZE, V_CHAR_SIZE_BITS + 1)(V_CHAR_SIZE_BITS downto 1)) when DH = '1' and DH_LAST_ROW = '1' else CHAR_ROW_COUNTER;
                     
 ACTIVE_AREA_CONTROLLER: process(CLK, RESET)
     begin
