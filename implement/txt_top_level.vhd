@@ -7,25 +7,65 @@ use ieee.numeric_std.all;
 
 entity TXT_TOP_LEVEL is
     port (
+    RESETn     : in  std_logic;
+    -- programmable oscillator
     CLK_27_750 : in  std_logic;
     CLK_VIDEO  : in  std_logic;
-    RESETn     : in  std_logic;
+    CLK_SPARE  : in  std_logic;
+    PRCLK_SDA  : inout std_logic;
+    PRCLK_SCL  : inout std_logic;
+    -- data in
     RX_IN      : in  std_logic;
-    
-    MIX_IN     : in std_logic;
-    REVEAL_IN  : in std_logic;
-    PAGE_UP    : in std_logic;
-    PAGE_DOWN  : in std_logic;
-    
+    -- keypad and DIP switches
+    KEYPAD_ROWS : out std_logic_vector(5 downto 0);
+    KEYPAD_COLS : in  std_logic_vector(5 downto 0);
+    -- HDMI interface
+    HDMI_SDA : inout std_logic;
+    HDMI_SCL : inout std_logic;
+    TMDS_CLK : out std_logic;
+    --TMDS_CLK_N : out std_logic;
+    TMDS_D0 : out std_logic;
+    --TMDS_D0_N : out std_logic;
+    TMDS_D1 : out std_logic;
+    --TMDS_D1_N : out std_logic;
+    TMDS_D2 : out std_logic;
+    --TMDS_D2_N : out std_logic;
+    HDMI_HPD : in std_logic;
+    -- SRAM for future use (optional)
+    SRAM_ADDR : out std_logic_vector(18 downto 0);
+    SRAM_DATA : inout std_logic_vector(7 downto 0);
+    SRAM_OE_N : out std_logic;
+    SRAM_WE_N : out std_logic;
+    SRAM_CE_N : out std_logic;
+    -- SAA7113 Video Processor (optional) - use same pins as oscillator for I2C
+    VP_DATA_IN : in std_logic_vector(7 downto 0);
+    VP_RTCO_IN : in std_logic;
+    VP_RTS0_IN : in std_logic;
+    VP_RTS1_IN : in std_logic;
+    VP_LLC_IN : in std_logic;
+    -- VGA interface (PMOD connector)
     R_OUT      : out std_logic;
     G_OUT      : out std_logic;
     B_OUT      : out std_logic;
     HSYNC_OUT  : out std_logic;
-    VSYNC_OUT  : out std_logic
+    VSYNC_OUT  : out std_logic;
+    HSYNC_IN   : in  std_logic;
+    VSYNC_IN   : in  std_logic;
+    R_EN_OUT   : out std_logic;
+    G_EN_OUT   : out std_logic;
+    B_EN_OUT   : out std_logic
     );
 end entity TXT_TOP_LEVEL;
 
 architecture rtl of TXT_TOP_LEVEL is
+-- to be reassigned to keypad controller - moved here to enable compilation for pin planner
+signal MIX_IN     : std_logic := '1';
+signal REVEAL_IN  : std_logic := '1';
+signal PAGE_UP    : std_logic := '1';
+signal PAGE_DOWN  : std_logic := '1';
+-- end of temporary signals
+    
+    
 signal PAGE_NUMBER : integer range 0 to 2047;
 constant BUTTON_DELAY_COUNTER_MAX : integer := 2775000;
 signal BUTTON_DELAY_COUNTER : integer range 0 to BUTTON_DELAY_COUNTER_MAX;   --10 increments per second

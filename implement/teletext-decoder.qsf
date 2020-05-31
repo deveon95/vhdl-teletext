@@ -37,17 +37,16 @@
 # -------------------------------------------------------------------------- #
 
 
-set_global_assignment -name FAMILY "Cyclone 10 LP"
-set_global_assignment -name DEVICE 10CL025YU256I7G
+set_global_assignment -name FAMILY "MAX 10"
+set_global_assignment -name DEVICE 10M04SCE144C8G
 set_global_assignment -name TOP_LEVEL_ENTITY txt_top_level
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION "19.1.0 SP0.02STD"
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "20:49:58  MARCH 28, 2020"
 set_global_assignment -name LAST_QUARTUS_VERSION "19.1.0 SP0.02std Lite Edition"
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
-set_global_assignment -name MIN_CORE_JUNCTION_TEMP "-40"
-set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
-set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 1
-set_global_assignment -name NOMINAL_CORE_SUPPLY_VOLTAGE 1.2V
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
+set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 2
 set_global_assignment -name EDA_SIMULATION_TOOL "Active-HDL (VHDL)"
 set_global_assignment -name EDA_TIME_SCALE "1 ps" -section_id eda_simulation
 set_global_assignment -name EDA_OUTPUT_DATA_FORMAT VHDL -section_id eda_simulation
@@ -57,11 +56,11 @@ set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id eda_
 set_global_assignment -name EDA_GENERATE_FUNCTIONAL_NETLIST OFF -section_id eda_board_design_boundary_scan
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
-set_global_assignment -name ENABLE_DEVICE_WIDE_RESET OFF
-set_global_assignment -name ENABLE_DEVICE_WIDE_OE ON
-set_global_assignment -name ENABLE_INIT_DONE_OUTPUT ON
+set_global_assignment -name ENABLE_DEVICE_WIDE_RESET ON
+set_global_assignment -name ENABLE_DEVICE_WIDE_OE OFF
+set_global_assignment -name ENABLE_INIT_DONE_OUTPUT OFF
 set_global_assignment -name ENABLE_OCT_DONE OFF
-set_global_assignment -name ENABLE_CONFIGURATION_PINS OFF
+set_global_assignment -name ENABLE_CONFIGURATION_PINS ON
 set_global_assignment -name ENABLE_BOOT_SEL_PIN OFF
 set_global_assignment -name USE_CONFIGURATION_DEVICE OFF
 set_global_assignment -name CRC_ERROR_OPEN_DRAIN OFF
@@ -73,21 +72,7 @@ set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
-set_location_assignment PIN_E16 -to CLK_27_750
-set_location_assignment PIN_K2 -to RX_IN
-set_location_assignment PIN_K5 -to FRAME_VALID_OUT
-set_location_assignment PIN_L4 -to SERIAL_CLOCK_OUT
-set_location_assignment PIN_K1 -to SERIAL_DATA_OUT
-set_global_assignment -name NUM_PARALLEL_PROCESSORS "all"
-set_location_assignment PIN_L2 -to CLK_REPEATER
-set_location_assignment PIN_J15 -to RESETn
-set_location_assignment PIN_L14 -to CLK_REPEATER2
-set_location_assignment PIN_K15 -to RESET_REPEATER
-set_location_assignment PIN_J1 -to R_OUT
-set_location_assignment PIN_G1 -to B_OUT
-set_location_assignment PIN_J2 -to G_OUT
-set_location_assignment PIN_G2 -to HSYNC_OUT
-set_location_assignment PIN_D1 -to VSYNC_OUT
+set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
 set_global_assignment -name SDC_FILE "teletext-decoder.sdc"
 set_global_assignment -name VHDL_FILE ../src/rtl/TXT_DATA_RECOVERY.vhd
 set_global_assignment -name VHDL_FILE ../src/rtl/TXT_DESERIALISER.vhd
@@ -101,12 +86,115 @@ set_global_assignment -name QIP_FILE ../src/rtl/dpr_ip_variation.qip
 set_global_assignment -name VHDL_FILE ../src/rtl/DISPLAY_GENERATOR.vhd
 set_global_assignment -name VHDL_FILE ../src/rtl/VGA.vhd
 set_global_assignment -name VHDL_FILE txt_top_level.vhd
-set_location_assignment PIN_C11 -to PAGE_DOWN
-set_location_assignment PIN_D9 -to PAGE_UP
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to PAGE_DOWN
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to PAGE_UP
-set_location_assignment PIN_F14 -to REVEAL_IN
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to REVEAL_IN
-set_location_assignment PIN_E15 -to MIX_IN
-set_location_assignment PIN_M15 -to CLK_VIDEO
+set_global_assignment -name DEVICE_MIGRATION_LIST "10M04SCE144C8G,10M08SCE144C8G,10M16SCE144C8G,10M25SCE144C8G"
+set_global_assignment -name IOBANK_VCCIO 2.5V -section_id 3
+set_location_assignment PIN_47 -to TMDS_D2
+set_instance_assignment -name IO_STANDARD LVDS -to TMDS_D2
+set_location_assignment PIN_46 -to "TMDS_D2(n)"
+set_location_assignment PIN_45 -to TMDS_D1
+set_instance_assignment -name IO_STANDARD LVDS -to TMDS_D1
+set_location_assignment PIN_44 -to "TMDS_D1(n)"
+set_location_assignment PIN_43 -to TMDS_D0
+set_instance_assignment -name IO_STANDARD LVDS -to TMDS_D0
+set_location_assignment PIN_41 -to "TMDS_D0(n)"
+set_location_assignment PIN_39 -to TMDS_CLK
+set_instance_assignment -name IO_STANDARD LVDS -to TMDS_CLK
+set_location_assignment PIN_38 -to "TMDS_CLK(n)"
+set_location_assignment PIN_88 -to VP_LLC_IN
+set_location_assignment PIN_86 -to VP_DATA_IN[7]
+set_location_assignment PIN_85 -to VP_DATA_IN[6]
+set_location_assignment PIN_84 -to VP_DATA_IN[5]
+set_location_assignment PIN_81 -to VP_DATA_IN[4]
+set_location_assignment PIN_80 -to VP_DATA_IN[3]
+set_location_assignment PIN_79 -to VP_DATA_IN[2]
+set_location_assignment PIN_78 -to VP_DATA_IN[1]
+set_location_assignment PIN_77 -to VP_DATA_IN[0]
+set_location_assignment PIN_76 -to VP_RTCO_IN
+set_location_assignment PIN_75 -to VP_RTS0_IN
+set_location_assignment PIN_74 -to VP_RTS1_IN
+set_location_assignment PIN_90 -to CLK_VIDEO
+set_location_assignment PIN_91 -to CLK_SPARE
+set_location_assignment PIN_89 -to CLK_27_750
+set_location_assignment PIN_93 -to PRCLK_SCL
+set_location_assignment PIN_92 -to PRCLK_SDA
+set_location_assignment PIN_87 -to RX_IN
+set_location_assignment PIN_29 -to HDMI_HPD
+set_location_assignment PIN_33 -to HDMI_SCL
+set_location_assignment PIN_32 -to HDMI_SDA
+set_location_assignment PIN_27 -to VSYNC_IN
+set_location_assignment PIN_26 -to HSYNC_IN
+set_location_assignment PIN_25 -to VSYNC_OUT
+set_location_assignment PIN_24 -to HSYNC_OUT
+set_location_assignment PIN_21 -to G_OUT
+set_location_assignment PIN_22 -to B_OUT
+set_location_assignment PIN_15 -to R_OUT
+set_location_assignment PIN_12 -to R_EN_OUT
+set_location_assignment PIN_13 -to G_EN_OUT
+set_location_assignment PIN_14 -to B_EN_OUT
+set_location_assignment PIN_119 -to SRAM_ADDR[18]
+set_location_assignment PIN_10 -to SRAM_ADDR[17]
+set_location_assignment PIN_8 -to SRAM_ADDR[16]
+set_location_assignment PIN_120 -to SRAM_ADDR[15]
+set_location_assignment PIN_7 -to SRAM_ADDR[14]
+set_location_assignment PIN_114 -to SRAM_ADDR[13]
+set_location_assignment PIN_6 -to SRAM_ADDR[12]
+set_location_assignment PIN_111 -to SRAM_ADDR[11]
+set_location_assignment PIN_110 -to SRAM_OE_N
+set_location_assignment PIN_102 -to SRAM_DATA[7]
+set_location_assignment PIN_101 -to SRAM_DATA[6]
+set_location_assignment PIN_100 -to SRAM_DATA[5]
+set_location_assignment PIN_99 -to SRAM_DATA[4]
+set_location_assignment PIN_106 -to SRAM_ADDR[10]
+set_location_assignment PIN_112 -to SRAM_ADDR[9]
+set_location_assignment PIN_113 -to SRAM_ADDR[8]
+set_location_assignment PIN_141 -to SRAM_ADDR[7]
+set_location_assignment PIN_140 -to SRAM_ADDR[6]
+set_location_assignment PIN_135 -to SRAM_ADDR[5]
+set_location_assignment PIN_118 -to SRAM_WE_N
+set_location_assignment PIN_98 -to SRAM_DATA[3]
+set_location_assignment PIN_122 -to SRAM_DATA[2]
+set_location_assignment PIN_123 -to SRAM_DATA[1]
+set_location_assignment PIN_124 -to SRAM_DATA[0]
+set_location_assignment PIN_105 -to SRAM_CE_N
+set_location_assignment PIN_134 -to SRAM_ADDR[4]
+set_location_assignment PIN_132 -to SRAM_ADDR[3]
+set_location_assignment PIN_131 -to SRAM_ADDR[2]
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to SRAM_ADDR[2]
+set_location_assignment PIN_130 -to SRAM_ADDR[1]
+set_location_assignment PIN_127 -to SRAM_ADDR[0]
+set_location_assignment PIN_70 -to KEYPAD_ROWS[0]
+set_location_assignment PIN_69 -to KEYPAD_ROWS[1]
+set_location_assignment PIN_66 -to KEYPAD_ROWS[2]
+set_location_assignment PIN_65 -to KEYPAD_ROWS[3]
+set_location_assignment PIN_64 -to KEYPAD_ROWS[4]
+set_location_assignment PIN_62 -to KEYPAD_ROWS[5]
+set_location_assignment PIN_60 -to KEYPAD_COLS[0]
+set_location_assignment PIN_59 -to KEYPAD_COLS[1]
+set_location_assignment PIN_58 -to KEYPAD_COLS[2]
+set_location_assignment PIN_57 -to KEYPAD_COLS[3]
+set_location_assignment PIN_56 -to KEYPAD_COLS[4]
+set_location_assignment PIN_55 -to KEYPAD_COLS[5]
+set_location_assignment PIN_28 -to RESETn
+set_instance_assignment -name IO_STANDARD "2.5 V" -to KEYPAD_COLS[5]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to KEYPAD_COLS[4]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to KEYPAD_COLS[3]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to KEYPAD_COLS[2]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to KEYPAD_COLS[1]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to KEYPAD_COLS[0]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to KEYPAD_COLS
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEYPAD_COLS[5]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEYPAD_COLS[4]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEYPAD_COLS[3]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEYPAD_COLS[2]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEYPAD_COLS[1]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEYPAD_COLS[0]
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to KEYPAD_COLS
+set_global_assignment -name IOBANK_VCCIO 2.5V -section_id 4
+set_instance_assignment -name IO_STANDARD "2.5 V" -to KEYPAD_ROWS[5]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to KEYPAD_ROWS[4]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to KEYPAD_ROWS[3]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to KEYPAD_ROWS[2]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to KEYPAD_ROWS[1]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to KEYPAD_ROWS[0]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to KEYPAD_ROWS
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
