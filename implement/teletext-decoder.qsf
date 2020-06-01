@@ -38,7 +38,7 @@
 
 
 set_global_assignment -name FAMILY "MAX 10"
-set_global_assignment -name DEVICE 10M04SCE144C8G
+set_global_assignment -name DEVICE 10M08SCE144C8G
 set_global_assignment -name TOP_LEVEL_ENTITY txt_top_level
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION "19.1.0 SP0.02STD"
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "20:49:58  MARCH 28, 2020"
@@ -73,20 +73,7 @@ set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL
-set_global_assignment -name SDC_FILE "teletext-decoder.sdc"
-set_global_assignment -name VHDL_FILE ../src/rtl/TXT_DATA_RECOVERY.vhd
-set_global_assignment -name VHDL_FILE ../src/rtl/TXT_DESERIALISER.vhd
-set_global_assignment -name VHDL_FILE ../src/rtl/ODD_PARITY_DECODER.vhd
-set_global_assignment -name VHDL_FILE ../src/rtl/HAMMING2418_DECODER.vhd
-set_global_assignment -name VHDL_FILE ../src/rtl/HAMMING84_DECODER.vhd
-set_global_assignment -name VHDL_FILE ../src/rtl/TXT_DATA_PROCESSOR.vhd
-set_global_assignment -name VHDL_FILE ../src/rtl/TXT_MEMORY_CONTROLLER.vhd
-set_global_assignment -name VHDL_FILE ../src/rtl/CGROM.vhd
-set_global_assignment -name QIP_FILE ../src/rtl/dpr_ip_variation.qip
-set_global_assignment -name VHDL_FILE ../src/rtl/DISPLAY_GENERATOR.vhd
-set_global_assignment -name VHDL_FILE ../src/rtl/VGA.vhd
-set_global_assignment -name VHDL_FILE txt_top_level.vhd
-set_global_assignment -name DEVICE_MIGRATION_LIST "10M04SCE144C8G,10M08SCE144C8G,10M16SCE144C8G,10M25SCE144C8G"
+set_global_assignment -name DEVICE_MIGRATION_LIST "10M08SCE144C8G,10M04SCE144C8G,10M16SCE144C8G,10M25SCE144C8G"
 set_global_assignment -name IOBANK_VCCIO 2.5V -section_id 3
 set_location_assignment PIN_47 -to TMDS_D2
 set_instance_assignment -name IO_STANDARD LVDS -to TMDS_D2
@@ -197,4 +184,28 @@ set_instance_assignment -name IO_STANDARD "2.5 V" -to KEYPAD_ROWS[2]
 set_instance_assignment -name IO_STANDARD "2.5 V" -to KEYPAD_ROWS[1]
 set_instance_assignment -name IO_STANDARD "2.5 V" -to KEYPAD_ROWS[0]
 set_instance_assignment -name IO_STANDARD "2.5 V" -to KEYPAD_ROWS
+set_global_assignment -name PROJECT_IP_REGENERATION_POLICY ALWAYS_REGENERATE_IP
+set_global_assignment -name FLOW_ENABLE_POWER_ANALYZER ON
+set_global_assignment -name POWER_DEFAULT_INPUT_IO_TOGGLE_RATE "12.5 %"
+set_location_assignment PIN_54 -to LED_OUT
+set_instance_assignment -name IO_STANDARD "2.5 V" -to LED_OUT
+set_global_assignment -name SDC_FILE "teletext-decoder.sdc"
+set_global_assignment -name VHDL_FILE ../src/rtl/si5351.vhd
+set_global_assignment -name VHDL_FILE ../src/rtl/TXT_DATA_RECOVERY.vhd
+set_global_assignment -name VHDL_FILE ../src/rtl/TXT_DESERIALISER.vhd
+set_global_assignment -name VHDL_FILE ../src/rtl/ODD_PARITY_DECODER.vhd
+set_global_assignment -name VHDL_FILE ../src/rtl/HAMMING2418_DECODER.vhd
+set_global_assignment -name VHDL_FILE ../src/rtl/HAMMING84_DECODER.vhd
+set_global_assignment -name VHDL_FILE ../src/rtl/TXT_DATA_PROCESSOR.vhd
+set_global_assignment -name VHDL_FILE ../src/rtl/TXT_MEMORY_CONTROLLER.vhd
+set_global_assignment -name VHDL_FILE ../src/rtl/CGROM.vhd
+set_global_assignment -name QIP_FILE ../src/rtl/dpr_ip_variation.qip
+set_global_assignment -name VHDL_FILE ../src/rtl/DISPLAY_GENERATOR.vhd
+set_global_assignment -name VHDL_FILE ../src/rtl/VGA.vhd
+set_global_assignment -name QIP_FILE ../src/rtl/obuf.qip
+set_global_assignment -name QIP_FILE ../src/rtl/pll.qip
+set_global_assignment -name VERILOG_FILE ../src/rtl/HDMI.v -library work
+set_global_assignment -name VERILOG_FILE ../src/rtl/intosc/synthesis/submodules/altera_int_osc.v
+set_global_assignment -name VHDL_FILE ../src/rtl/intosc/synthesis/intosc.vhd
+set_global_assignment -name VHDL_FILE txt_top_level.vhd
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

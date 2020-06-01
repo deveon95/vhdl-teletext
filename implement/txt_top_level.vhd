@@ -19,6 +19,8 @@ entity TXT_TOP_LEVEL is
     -- keypad and DIP switches
     KEYPAD_ROWS : out std_logic_vector(5 downto 0);
     KEYPAD_COLS : in  std_logic_vector(5 downto 0);
+    -- LED
+    LED_OUT : out std_logic;
     -- HDMI interface
     HDMI_SDA : inout std_logic;
     HDMI_SCL : inout std_logic;
@@ -64,14 +66,37 @@ signal REVEAL_IN  : std_logic := '1';
 signal PAGE_UP    : std_logic := '1';
 signal PAGE_DOWN  : std_logic := '1';
 -- end of temporary signals
+
+-- Parameters for 720x576 resolution
+constant H_SIZE : integer := 720;
+constant H_FRONT_PORCH : integer := 16;
+constant H_SYNC_PULSE : integer := 96;
+constant H_BACK_PORCH : integer := 32;
+constant V_SIZE : integer := 576;
+constant V_FRONT_PORCH : integer := 23;
+constant V_SYNC_PULSE : integer := 3;
+constant V_BACK_PORCH : integer := 23;
+-- Parameters for 640x480 resolution
+--constant H_SIZE : integer := 640;
+--constant H_FRONT_PORCH : integer := 16;
+--constant H_SYNC_PULSE : integer := 96;
+--constant H_BACK_PORCH : integer := 48;
+--constant V_SIZE : integer := 480;
+--constant V_FRONT_PORCH : integer := 11;
+--constant V_SYNC_PULSE : integer := 2;
+--constant V_BACK_PORCH : integer := 31;
     
+constant BUTTON_DELAY_COUNTER_MAX : integer := 2775000;
+-- END OF CONSTANTS
     
 signal PAGE_NUMBER : integer range 0 to 2047;
-constant BUTTON_DELAY_COUNTER_MAX : integer := 2775000;
 signal BUTTON_DELAY_COUNTER : integer range 0 to BUTTON_DELAY_COUNTER_MAX;   --10 increments per second
 signal PAGE_UP_SYNC, PAGE_UP_SYNC_2, PAGE_DOWN_SYNC, PAGE_DOWN_SYNC_2 : std_logic;
 
 signal RESET : std_logic;
+signal CLK_INTERNAL : std_logic;
+signal PRCLK_SDA_INT : std_logic;
+signal PRCLK_SCL_INT : std_logic;
 signal SERIAL_DATA : std_logic;
 signal SERIAL_CLOCK : std_logic;
 signal SERIAL_FRAME_VALID : std_logic;
@@ -97,6 +122,13 @@ signal NEW_SCREEN : std_logic;
 signal R : std_logic;
 signal G : std_logic;
 signal B : std_logic;
+
+-- Full component instantiation of Verilog module required due to Quartus bug
+component HDMI
+port (inclk, R_IN, G_IN, B_IN : in std_logic;
+      NEW_ROW_OUT, NEW_SCREEN_OUT, TMDS2, TMDS1, TMDS0, TMDS_clock : out std_logic);
+end component;
+
 begin
 
     RESET <= not RESETn;
@@ -151,7 +183,7 @@ DATA_RECOVERY: entity work.TXT_DATA_RECOVERY
     port map(
     RESET => RESET,
     CLK_27_750 => CLK_27_750,
-    RX_IN => RX_IN,
+    RX_IN => not RX_IN,
     SERIAL_DATA_OUT => SERIAL_DATA,
     SERIAL_CLOCK_OUT => SERIAL_CLOCK,
     FRAME_VALID_OUT => SERIAL_FRAME_VALID);
@@ -242,19 +274,62 @@ DISPLAY_GENERATOR: entity work.DISPLAY_GENERATOR
     B_OUT => B);
 
 VGA: entity work.VGA
+    generic map(
+    H_SIZE => H_SIZE,
+    H_FRONT_PORCH => H_FRONT_PORCH,
+    H_SYNC_PULSE => H_SYNC_PULSE,
+    H_BACK_PORCH => H_BACK_PORCH,
+    V_SIZE => V_SIZE,
+    V_FRONT_PORCH => V_FRONT_PORCH,
+    V_SYNC_PULSE => V_SYNC_PULSE,
+    V_BACK_PORCH => V_BACK_PORCH)
     port map(
     RESET => RESET,
     CLK => CLK_VIDEO,
     R_IN => R,
     G_IN => G,
     B_IN => B,
-    NEW_ROW_OUT => NEW_ROW,
-    NEW_SCREEN_OUT => NEW_SCREEN,
+    NEW_ROW_OUT => open,
+    NEW_SCREEN_OUT => open,
     R_OUT => R_OUT,
     G_OUT => G_OUT,
     B_OUT => B_OUT,
     HSYNC_OUT => HSYNC_OUT,
     VSYNC_OUT => VSYNC_OUT);
+    
+HDMI_FPGA4FUN: HDMI
+    port map(
+    inclk => CLK_VIDEO,
+    R_IN => R,
+    G_IN => G,
+    B_IN => B,
+    NEW_ROW_OUT => NEW_ROW,
+    NEW_SCREEN_OUT => NEW_SCREEN,
+    TMDS2 => TMDS_D2,
+    TMDS1 => TMDS_D1,
+    TMDS0 => TMDS_D0,
+    TMDS_clock => TMDS_CLK
+    );
+    
+INTERNAL_OSCILLATOR: entity work.intosc
+    port map(
+    oscena => '1',
+    clkout => CLK_INTERNAL);
+    
+CLOCK_CONTROLLER: entity work.SI5351
+    port map(
+    RESET => RESET,
+    CLOCK => CLK_INTERNAL,
+    SDA_OUT => PRCLK_SDA_INT,
+    SCL_OUT => PRCLK_SCL_INT,
+    SDA_IN => PRCLK_SDA,
+    SCL_IN => PRCLK_SCL,
+    COMPLETE_OUT => LED_OUT);
+    
+    PRCLK_SDA <= '0' when PRCLK_SDA_INT = '0' else 'Z';
+    PRCLK_SCL <= '0' when PRCLK_SCL_INT = '0' else 'Z';
+    --PRCLK_SDA <= 'Z';
+    --PRCLK_SCL <= 'Z';
 
 end architecture;
     

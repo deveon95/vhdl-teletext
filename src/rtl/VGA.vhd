@@ -3,6 +3,15 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity VGA is
+    generic (
+    H_SIZE          : integer;
+    H_FRONT_PORCH   : integer;
+    H_SYNC_PULSE    : integer;
+    H_BACK_PORCH    : integer;
+    V_SIZE          : integer;
+    V_FRONT_PORCH   : integer;
+    V_SYNC_PULSE    : integer;
+    V_BACK_PORCH    : integer);
     port (
     CLK             : in  std_logic;
     RESET           : in  std_logic;
@@ -19,24 +28,6 @@ entity VGA is
 end entity VGA;
 
 architecture RTL of VGA is
--- Parameters for 720x576 resolution
-constant H_SIZE : integer := 720;
-constant H_FRONT_PORCH : integer := 16;
-constant H_SYNC_PULSE : integer := 96;
-constant H_BACK_PORCH : integer := 16;
-constant V_SIZE : integer := 576;
-constant V_FRONT_PORCH : integer := 23;
-constant V_SYNC_PULSE : integer := 3;
-constant V_BACK_PORCH : integer := 23;
--- Parameters for 640x480 resolution
---constant H_SIZE : integer := 640;
---constant H_FRONT_PORCH : integer := 16;
---constant H_SYNC_PULSE : integer := 96;
---constant H_BACK_PORCH : integer := 48;
---constant V_SIZE : integer := 480;
---constant V_FRONT_PORCH : integer := 11;
---constant V_SYNC_PULSE : integer := 2;
---constant V_BACK_PORCH : integer := 31;
 
 constant H_COUNT_MAX : integer := H_SIZE + H_FRONT_PORCH + H_SYNC_PULSE + H_BACK_PORCH - 1;
 signal H_COUNT : integer range 0 to H_COUNT_MAX;

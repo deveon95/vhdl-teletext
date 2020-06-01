@@ -1,0 +1,16 @@
+Info: Starting: Create HDL design files for synthesis
+Info: qsys-generate Z:\Documents\Projects\Teletext-decoder\chinese-hdmi-example-max-10\intosc.qsys --synthesis=VHDL --output-directory=Z:\Documents\Projects\Teletext-decoder\chinese-hdmi-example-max-10\intosc\synthesis --family="MAX 10" --part=10M08SCE144C8G
+Progress: Loading chinese-hdmi-example-max-10/intosc.qsys
+Progress: Reading input file
+Progress: Adding int_osc_0 [altera_int_osc 19.1]
+Progress: Parameterizing module int_osc_0
+Progress: Building connections
+Progress: Parameterizing connections
+Progress: Validating
+Progress: Done reading input file
+Info: intosc: Generating intosc "intosc" for QUARTUS_SYNTH
+Info: int_osc_0: Generating top-level entity altera_int_osc.
+Info: int_osc_0: "intosc" instantiated altera_int_osc "int_osc_0"
+Info: intosc: Done "intosc" with 2 modules, 3 files
+Info: qsys-generate succeeded.
+Info: Finished: Create HDL design files for synthesis
