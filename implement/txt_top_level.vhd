@@ -60,13 +60,6 @@ entity TXT_TOP_LEVEL is
 end entity TXT_TOP_LEVEL;
 
 architecture rtl of TXT_TOP_LEVEL is
--- to be reassigned to keypad controller - moved here to enable compilation for pin planner
-signal MIX_IN     : std_logic := '1';
-signal REVEAL_IN  : std_logic := '1';
-signal PAGE_UP    : std_logic := '1';
-signal PAGE_DOWN  : std_logic := '1';
-signal KEYPAD_ROWS_INT : std_logic_vector(5 downto 0);
--- end of temporary signals
 
 -- Parameters for 720x576 resolution
 constant H_SIZE : integer := 720;
@@ -86,16 +79,17 @@ constant V_BACK_PORCH : integer := 23;
 --constant V_FRONT_PORCH : integer := 11;
 --constant V_SYNC_PULSE : integer := 2;
 --constant V_BACK_PORCH : integer := 31;
-    
+
+-- Button repeat delay (Page Up and Page Down only)
 constant BUTTON_DELAY_COUNTER_MAX : integer := 2775000;
 
-constant MOMENTARY_MASK : std_logic_vector(35 downto 0) := "001111001111001111001111001111000000";
+-- '1' for keypad buttons except Page Up and Page Down, '0' for DIP switches
+constant MOMENTARY_MASK : std_logic_vector(35 downto 0) := "001111001111001111001010001111000000";
 -- END OF CONSTANTS
     
 signal PAGE_NUMBER : integer range 0 to 2047;
-signal PAGE_NUMBER_SLV : std_logic_vector(10 downto 0);
+signal PAGE_NUMBER_DIPSW : std_logic_vector(10 downto 0);
 signal BUTTON_DELAY_COUNTER : integer range 0 to BUTTON_DELAY_COUNTER_MAX;   --10 increments per second
-signal PAGE_UP_SYNC, PAGE_UP_SYNC_2, PAGE_DOWN_SYNC, PAGE_DOWN_SYNC_2 : std_logic;
 
 signal RESET : std_logic;
 signal CLK_INTERNAL : std_logic;
@@ -115,9 +109,24 @@ signal ROW         : std_logic_vector(4 downto 0);
 signal PAGE        : std_logic_vector(7 downto 0);
 signal SUBCODE     : std_logic_vector(12 downto 0);
 signal CONTROL_BITS : std_logic_vector(10 downto 0);
+
+-- Keypad Signals
 signal KEYPAD_BUTTONS : std_logic_vector(35 downto 0);
 signal KEYPAD_FIRST_PASS : std_logic;
-    
+signal KEYPAD_FIRST_PASS_LAST : std_logic;
+
+signal MIX_BUTTON     : std_logic;
+signal REVEAL_BUTTON  : std_logic;
+signal PAGE_UP_BUTTON    : std_logic;
+signal PAGE_DOWN_BUTTON  : std_logic;
+signal KEYPAD_ROWS_INT : std_logic_vector(5 downto 0);
+
+signal MIX_ENABLE  : std_logic;
+signal REVEAL_ENABLE  : std_logic;
+signal MIX_LAST  : std_logic;
+signal REVEAL_LAST  : std_logic;
+
+-- Dual Port RAM signals
 signal DPR_READ_DATA : std_logic_vector(6 downto 0);
 signal DPR_READ_ADDRESS : std_logic_vector(9 downto 0);
 signal DPR_WRITE_ADDRESS : std_logic_vector(9 downto 0);
@@ -140,50 +149,72 @@ begin
     RESET <= not RESETn;
     
 -- A very simple page number entry system for testing
--- PAGE_NUMBER_CONTROLLER: process(CLK_27_750, RESET)
-    -- begin
-        -- if RESET = '1' then
-            -- PAGE_NUMBER <= 1939;
-            -- PAGE_UP_SYNC <= '0';
-            -- PAGE_UP_SYNC_2 <= '0';
-            -- PAGE_DOWN_SYNC <= '0';
-            -- PAGE_DOWN_SYNC_2 <= '0';
-        -- elsif rising_edge(CLK_27_750) then
-            -- PAGE_UP_SYNC <= not PAGE_UP;
-            -- PAGE_UP_SYNC_2 <= PAGE_UP_SYNC;
-            -- PAGE_DOWN_SYNC <= not PAGE_DOWN;
-            -- PAGE_DOWN_SYNC_2 <= PAGE_DOWN_SYNC;
-            -- if PAGE_UP_SYNC_2 = '1' then
-                -- if BUTTON_DELAY_COUNTER = BUTTON_DELAY_COUNTER_MAX / 2 then
-                    -- if PAGE_NUMBER > 0 then
-                        -- PAGE_NUMBER <= PAGE_NUMBER - 1;
-                    -- else
-                        -- PAGE_NUMBER <= 2047;
-                    -- end if;
-                -- end if;
-                -- if BUTTON_DELAY_COUNTER < BUTTON_DELAY_COUNTER_MAX then
-                    -- BUTTON_DELAY_COUNTER <= BUTTON_DELAY_COUNTER + 1;
-                -- else
-                    -- BUTTON_DELAY_COUNTER <= 0;
-                -- end if;
-            -- elsif PAGE_DOWN_SYNC_2 = '1' then
-                -- if BUTTON_DELAY_COUNTER = BUTTON_DELAY_COUNTER_MAX / 2 then
-                    -- if PAGE_NUMBER < 2047 then
-                        -- PAGE_NUMBER <= PAGE_NUMBER + 1;
-                    -- else
-                        -- PAGE_NUMBER <= 0;
-                    -- end if;
-                -- end if;
-                -- if BUTTON_DELAY_COUNTER < BUTTON_DELAY_COUNTER_MAX then
-                    -- BUTTON_DELAY_COUNTER <= BUTTON_DELAY_COUNTER + 1;
-                -- else
-                    -- BUTTON_DELAY_COUNTER <= 0;
-                -- end if;
-            -- else
-                -- BUTTON_DELAY_COUNTER <= 0;
-            -- end if;
-        -- end if;
-    -- end process;
+PAGE_NUMBER_CONTROLLER: process(CLK_27_750, RESET)
+    begin
+        if RESET = '1' then
+            PAGE_NUMBER <= 1939;
+            KEYPAD_FIRST_PASS_LAST <= '0';
+            MIX_ENABLE <= '0';
+            REVEAL_ENABLE <= '0';
+            MIX_LAST <= '0';
+            REVEAL_LAST <= '0';
+        elsif rising_edge(CLK_27_750) then
+            if KEYPAD_FIRST_PASS = '1' then
+                if KEYPAD_FIRST_PASS_LAST = '0' then
+                    KEYPAD_FIRST_PASS_LAST <= '1';
+                    PAGE_NUMBER <= to_integer(unsigned(PAGE_NUMBER_DIPSW));
+                else
+                    if PAGE_UP_BUTTON = '1' then
+                        if BUTTON_DELAY_COUNTER = BUTTON_DELAY_COUNTER_MAX / 2 then
+                            if PAGE_NUMBER > 0 then
+                                PAGE_NUMBER <= PAGE_NUMBER - 1;
+                            else
+                                PAGE_NUMBER <= 2047;
+                            end if;
+                        end if;
+                        if BUTTON_DELAY_COUNTER < BUTTON_DELAY_COUNTER_MAX then
+                            BUTTON_DELAY_COUNTER <= BUTTON_DELAY_COUNTER + 1;
+                        else
+                            BUTTON_DELAY_COUNTER <= 0;
+                        end if;
+                    elsif PAGE_DOWN_BUTTON = '1' then
+                        if BUTTON_DELAY_COUNTER = BUTTON_DELAY_COUNTER_MAX / 2 then
+                            if PAGE_NUMBER < 2047 then
+                                PAGE_NUMBER <= PAGE_NUMBER + 1;
+                            else
+                                PAGE_NUMBER <= 0;
+                            end if;
+                        end if;
+                        if BUTTON_DELAY_COUNTER < BUTTON_DELAY_COUNTER_MAX then
+                            BUTTON_DELAY_COUNTER <= BUTTON_DELAY_COUNTER + 1;
+                        else
+                            BUTTON_DELAY_COUNTER <= 0;
+                        end if;
+                    else
+                        BUTTON_DELAY_COUNTER <= 0;
+                    end if;
+                end if;
+                
+                if MIX_BUTTON = '1' then
+                    if MIX_LAST = '0' then
+                        MIX_ENABLE <= not MIX_ENABLE;
+                        MIX_LAST <= '1';
+                    end if;
+                else
+                    MIX_LAST <= '0';
+                end if;
+                
+                if REVEAL_BUTTON = '1' then
+                    if REVEAL_LAST = '0' then
+                        REVEAL_ENABLE <= not REVEAL_ENABLE;
+                        REVEAL_LAST <= '1';
+                    end if;
+                else
+                    REVEAL_LAST <= '0';
+                end if;
+            end if;
+        end if;
+    end process;
 
 DATA_RECOVERY: entity work.TXT_DATA_RECOVERY
     port map(
@@ -241,11 +272,15 @@ KEYPAD_CONTROLLER: entity work.KEYPAD
     FIRST_PASS_OUT => KEYPAD_FIRST_PASS);
     
     KEYPAD_ROWS <= KEYPAD_ROWS_INT;
-    PAGE_NUMBER <= to_integer(unsigned(PAGE_NUMBER_SLV));
-    PAGE_NUMBER_SLV <= KEYPAD_BUTTONS(28) & KEYPAD_BUTTONS(22) & KEYPAD_BUTTONS(16) &
+    
+    PAGE_NUMBER_DIPSW <= KEYPAD_BUTTONS(28) & KEYPAD_BUTTONS(22) & KEYPAD_BUTTONS(16) &
     KEYPAD_BUTTONS(10) & KEYPAD_BUTTONS(4) & KEYPAD_BUTTONS(35) &
     KEYPAD_BUTTONS(29) & KEYPAD_BUTTONS(23) & KEYPAD_BUTTONS(17) &
     KEYPAD_BUTTONS(11) & KEYPAD_BUTTONS(5);
+    PAGE_UP_BUTTON <= KEYPAD_BUTTONS(12);
+    PAGE_DOWN_BUTTON <= KEYPAD_BUTTONS(14);
+    MIX_BUTTON <= KEYPAD_BUTTONS(6);
+    REVEAL_BUTTON <= KEYPAD_BUTTONS(8);
 
 MEMORY_CONTROLLER: entity work.TXT_MEMORY_CONTROLLER
     port map(
@@ -291,8 +326,8 @@ DISPLAY_GENERATOR: entity work.DISPLAY_GENERATOR
     MEMORY_DATA_IN => DPR_READ_DATA,
     MEMORY_ADDRESS_OUT => DPR_READ_ADDRESS,
     
-    MIX_IN => not MIX_IN,
-    REVEAL_IN => not REVEAL_IN,
+    MIX_IN => MIX_ENABLE,
+    REVEAL_IN => REVEAL_ENABLE,
     
     NEW_ROW_IN => NEW_ROW,
     NEW_SCREEN_IN => NEW_SCREEN,
