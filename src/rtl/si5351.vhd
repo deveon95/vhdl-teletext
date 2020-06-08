@@ -28,6 +28,7 @@ signal DELAY_COUNTER : integer range 0 to INIT_LENGTH;
 signal SUBBIT_COUNTER : integer range 0 to 3;
 signal BIT_COUNTER : integer range 0 to 10;
 signal BYTE_COUNTER : integer range 0 to CONFIG_DATA_SIZE - 1;
+signal BYTE_COUNTER_SLV : std_logic_vector(7 downto 0);
 signal SDA_SYNCED, SDA_SYNCER, SCL_SYNCED, SCL_SYNCER : std_logic;
 
 type DATA_ARRAY is array (0 to CONFIG_DATA_SIZE - 1) of std_logic_vector(7 downto 0);
@@ -79,6 +80,8 @@ type STATE_TYPE is (INIT, SLAVE_ADDRESS, REGISTER_ADDRESS, WRITE_DATA, STOP, IDL
 signal STATE : STATE_TYPE;
 
 begin
+
+BYTE_COUNTER_SLV <= std_logic_vector(to_unsigned(BYTE_COUNTER, 8));
 
 process(CLOCK, RESET)
 begin
@@ -160,6 +163,7 @@ begin
                     -- Check for lack of ACK and restart configuration
                     if SUBBIT_COUNTER = 2 and SDA_SYNCED = '1' then
                         STATE <= INIT;
+                    end if;
                 elsif BIT_COUNTER = 10 then
                     if STATE = SLAVE_ADDRESS then
                         SDA_OUT <= '1';
@@ -171,7 +175,7 @@ begin
                         SDA_OUT <= SLAVE_ADDRESS_VALUE(8 - BIT_COUNTER);
                     elsif STATE = REGISTER_ADDRESS then
                         -- Starting at register address 0 so '0' for every bit
-                        SDA_OUT <= std_logic_vector(to_unsigned(BYTE_COUNTER, 8))(8 - BIT_COUNTER);
+                        SDA_OUT <= BYTE_COUNTER_SLV(8 - BIT_COUNTER);
                     else
                         SDA_OUT <= DATA_576P50(BYTE_COUNTER)(8 - BIT_COUNTER);
                     end if;
