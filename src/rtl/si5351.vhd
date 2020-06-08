@@ -18,7 +18,7 @@ end entity SI5351;
 
 architecture RTL of SI5351 is
 -- Length of each bit in clock cycles (I2C speed of roughly 25kHz)
-constant SUBBIT_LENGTH : integer := 1000;
+constant SUBBIT_LENGTH : integer := 250;
 -- power-on delay
 constant INIT_LENGTH : integer := 100000;
 -- Number of data bytes to write to slave
@@ -26,7 +26,7 @@ constant CONFIG_DATA_SIZE : integer := 233;
 
 signal DELAY_COUNTER : integer range 0 to INIT_LENGTH;
 signal SUBBIT_COUNTER : integer range 0 to 3;
-signal BIT_COUNTER : integer range 0 to 9;
+signal BIT_COUNTER : integer range 0 to 10;
 signal BYTE_COUNTER : integer range 0 to CONFIG_DATA_SIZE - 1;
 signal SDA_SYNCED, SDA_SYNCER, SCL_SYNCED, SCL_SYNCER : std_logic;
 
@@ -36,6 +36,7 @@ type DATA_ARRAY is array (0 to CONFIG_DATA_SIZE - 1) of std_logic_vector(7 downt
 -- 1. Open si5351.txt in a diff tool
 -- 2. Generate new configuration using "Save device registers (not for factory programming)" in Clockbuilder Desktop
 -- 3. Compare new configuration with old using the diff tool to see which bytes below must be changed
+-- 4. LEAVE ALL REGISTERS 188 and above set to 0 even if ClockBuilder tells you different. Non-zero values will cause the slave to NACK and the clock configuration will not be accepted.
 
 -- CLK0: 27.750 MHz
 -- CLK1: 27.000 MHz
@@ -68,7 +69,7 @@ x"60", x"60", x"00", x"C0", x"00", x"00", x"00", x"00",         -- 184..191
 x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 192..199
 x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 200..207
 x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 208..215
-x"00", x"00", x"00", x"00", x"00", x"0D", x"00", x"00",         -- 216..223
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 216..223
 x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 224..231
 x"00");
 
@@ -88,6 +89,7 @@ begin
         DELAY_COUNTER <= 0;
         SUBBIT_COUNTER <= 0;
         BIT_COUNTER <= 0;
+        BYTE_COUNTER <= 0;
         COMPLETE_OUT <= '0';
         SDA_SYNCER <= '0';
         SDA_SYNCED <= '0';
@@ -112,11 +114,12 @@ begin
                     DELAY_COUNTER <= DELAY_COUNTER + 1;
                 end if;
             when SLAVE_ADDRESS | REGISTER_ADDRESS | WRITE_DATA =>
+                -- Counter control
                 if DELAY_COUNTER >= SUBBIT_LENGTH then
                     DELAY_COUNTER <= 0;
                     if SUBBIT_COUNTER = 3 then
                         SUBBIT_COUNTER <= 0;
-                        if BIT_COUNTER = 9 then
+                        if BIT_COUNTER = 10 then
                             BIT_COUNTER <= 1;               -- Only use BIT_COUNTER = 0 for start bit
                             if STATE = SLAVE_ADDRESS then
                                 STATE <= REGISTER_ADDRESS;
@@ -131,21 +134,25 @@ begin
                             BIT_COUNTER <= BIT_COUNTER + 1;
                         end if;
                     else
-                        if SUBBIT_COUNTER = 2 and SCL_SYNCED = '0' then
+                        --if SUBBIT_COUNTER = 2 and SCL_SYNCED = '0' then
                             -- Clock stretch detection
-                            SUBBIT_COUNTER <= SUBBIT_COUNTER;
-                        else
+                        --    SUBBIT_COUNTER <= SUBBIT_COUNTER;
+                        --else
                             SUBBIT_COUNTER <= SUBBIT_COUNTER + 1;
-                        end if;
+                        --end if;
                     end if;
                 else
                     DELAY_COUNTER <= DELAY_COUNTER + 1;
                 end if;
-                if SUBBIT_COUNTER = 1 then
+                -- SCL control
+                if BIT_COUNTER = 10 then
+                    SCL_OUT <= '0';
+                elsif SUBBIT_COUNTER = 1 then
                     SCL_OUT <= '1';
                 elsif SUBBIT_COUNTER = 3 then
                     SCL_OUT <= '0';
                 end if;
+                -- SDA control
                 if BIT_COUNTER = 0 then
                     SDA_OUT <= '0';
                 elsif BIT_COUNTER = 9 then
@@ -153,20 +160,25 @@ begin
                     -- Check for lack of ACK and restart configuration
                     if SUBBIT_COUNTER = 2 and SDA_SYNCED = '1' then
                         STATE <= INIT;
+                elsif BIT_COUNTER = 10 then
+                    if STATE = SLAVE_ADDRESS then
+                        SDA_OUT <= '1';
+                    else
+                        SDA_OUT <= '0';
                     end if;
                 else
                     if STATE = SLAVE_ADDRESS then
                         SDA_OUT <= SLAVE_ADDRESS_VALUE(8 - BIT_COUNTER);
                     elsif STATE = REGISTER_ADDRESS then
                         -- Starting at register address 0 so '0' for every bit
-                        SDA_OUT <= '0';
+                        SDA_OUT <= std_logic_vector(to_unsigned(BYTE_COUNTER, 8))(8 - BIT_COUNTER);
                     else
                         SDA_OUT <= DATA_576P50(BYTE_COUNTER)(8 - BIT_COUNTER);
                     end if;
                 end if;
             when STOP =>
-                SDA_OUT <= '1';
-                SCL_OUT <= '0';
+                SDA_OUT <= '0';
+                SCL_OUT <= '1';
                 if DELAY_COUNTER >= SUBBIT_LENGTH then
                     STATE <= IDLE;
                 else

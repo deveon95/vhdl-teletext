@@ -1,5 +1,5 @@
 // (c) fpga4fun.com & KNJN LLC 2013
-
+// This code is not compatible with GPL and must be replaced!
 ////////////////////////////////////////////////////////////////////////
 module HDMI(
 	input inclk,  // Video clock
