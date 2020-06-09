@@ -123,6 +123,7 @@ signal KEYPAD_ROWS_INT : std_logic_vector(5 downto 0);
 
 signal MIX_ENABLE  : std_logic;
 signal REVEAL_ENABLE  : std_logic;
+signal AB_ENABLE : std_logic;
 signal MIX_LAST  : std_logic;
 signal REVEAL_LAST  : std_logic;
 
@@ -281,6 +282,7 @@ KEYPAD_CONTROLLER: entity work.KEYPAD
     PAGE_DOWN_BUTTON <= KEYPAD_BUTTONS(14);
     MIX_BUTTON <= KEYPAD_BUTTONS(6);
     REVEAL_BUTTON <= KEYPAD_BUTTONS(8);
+    AB_ENABLE <= KEYPAD_BUTTONS(34);
 
 MEMORY_CONTROLLER: entity work.TXT_MEMORY_CONTROLLER
     port map(
@@ -328,6 +330,7 @@ DISPLAY_GENERATOR: entity work.DISPLAY_GENERATOR
     
     MIX_IN => MIX_ENABLE,
     REVEAL_IN => REVEAL_ENABLE,
+    AB_EN_IN => AB_ENABLE,
     
     NEW_ROW_IN => NEW_ROW,
     NEW_SCREEN_IN => NEW_SCREEN,

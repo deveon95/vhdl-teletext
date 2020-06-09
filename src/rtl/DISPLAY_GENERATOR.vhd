@@ -9,6 +9,7 @@ port (
     
     REVEAL_IN : in std_logic;
     MIX_IN : in std_logic;
+    AB_EN_IN : in std_logic;
     
     MEMORY_DATA_IN : in std_logic_vector(6 downto 0);
     MEMORY_ADDRESS_OUT : out std_logic_vector(9 downto 0);
@@ -37,8 +38,6 @@ constant TEXT_LINES : integer := 25;
 constant TEXT_COLS : integer := 40;
 constant V_PIXEL_STRETCH : integer := 2;
 constant H_PIXEL_STRETCH : integer := 2;
--- Needed for some non-compliant services
-constant FOREGROUND_BLACK_ENABLE : std_logic := '0';
 
 constant DISPLAY_AREA_WIDTH : integer := H_CHAR_SIZE * H_PIXEL_STRETCH * TEXT_COLS;
 constant DISPLAY_AREA_HEIGHT : integer := V_CHAR_SIZE * V_PIXEL_STRETCH * TEXT_LINES;
@@ -94,6 +93,8 @@ signal DH : std_logic;
 signal NEXT_DH : std_logic;
 signal CURRENT_PIXEL : std_logic;
 signal DISP_ATTRIBUTE : std_logic;
+-- Needed for some non-compliant services
+signal FOREGROUND_BLACK_ENABLE : std_logic;
 
 constant BLANK_CHAR : std_logic_vector(6 downto 0) := "0100000";
 
@@ -102,6 +103,8 @@ begin
     MEMORY_ADDRESS_OUT <= std_logic_vector(to_unsigned(CHAR_COUNTER,10)) when DH_LAST_ROW = '0' else std_logic_vector(to_unsigned(CHAR_COUNTER - TEXT_COLS,10));
     
     MEMORY_DATA <= MEMORY_DATA_IN;
+    
+    FOREGROUND_BLACK_ENABLE <= AB_EN_IN;
 
 CGROM: entity work.CGROM
     port map(
