@@ -87,7 +87,8 @@ constant BUTTON_DELAY_COUNTER_MAX : integer := 2775000;
 constant MOMENTARY_MASK : std_logic_vector(35 downto 0) := "001111001111001111001010001111000000";
 -- END OF CONSTANTS
     
-signal PAGE_NUMBER : integer range 0 to 2047;
+signal PAGE_NUMBER : std_logic_vector(10 downto 0);
+signal SUBPAGE_NUMBER : std_logic_vector(12 downto 0);
 signal PAGE_NUMBER_DIPSW : std_logic_vector(10 downto 0);
 signal BUTTON_DELAY_COUNTER : integer range 0 to BUTTON_DELAY_COUNTER_MAX;   --10 increments per second
 
@@ -116,16 +117,33 @@ signal KEYPAD_FIRST_PASS : std_logic;
 signal KEYPAD_FIRST_PASS_LAST : std_logic;
 
 signal MIX_BUTTON     : std_logic;
+signal SUBPAGE_BUTTON : std_logic;
 signal REVEAL_BUTTON  : std_logic;
 signal PAGE_UP_BUTTON    : std_logic;
 signal PAGE_DOWN_BUTTON  : std_logic;
+signal KEY_0 : std_logic;
+signal KEY_1 : std_logic;
+signal KEY_2 : std_logic;
+signal KEY_3 : std_logic;
+signal KEY_4 : std_logic;
+signal KEY_5 : std_logic;
+signal KEY_6 : std_logic;
+signal KEY_7 : std_logic;
+signal KEY_8 : std_logic;
+signal KEY_9 : std_logic;
+signal KEY_ACTIVE : std_logic;
+signal KEY_VALUE : std_logic_vector(3 downto 0);
 signal KEYPAD_ROWS_INT : std_logic_vector(5 downto 0);
 
 signal MIX_ENABLE  : std_logic;
+signal SUBPAGE_ENABLE : std_logic;
 signal REVEAL_ENABLE  : std_logic;
 signal AB_ENABLE : std_logic;
 signal MIX_LAST  : std_logic;
+signal SUBPAGE_LAST  : std_logic;
 signal REVEAL_LAST  : std_logic;
+signal DIGIT_INDEX : integer range 0 to 3;
+signal KEY_ACTIVE_LAST : std_logic;
 
 -- Dual Port RAM signals
 signal DPR_READ_DATA : std_logic_vector(6 downto 0);
@@ -153,24 +171,66 @@ begin
 PAGE_NUMBER_CONTROLLER: process(CLK_27_750, RESET)
     begin
         if RESET = '1' then
-            PAGE_NUMBER <= 1939;
+            PAGE_NUMBER <= "00000000000";
+            SUBPAGE_NUMBER <= "0000000000000";
             KEYPAD_FIRST_PASS_LAST <= '0';
             MIX_ENABLE <= '0';
             REVEAL_ENABLE <= '0';
             MIX_LAST <= '0';
             REVEAL_LAST <= '0';
+            DIGIT_INDEX <= 0;
+            KEY_ACTIVE_LAST <= '0';
         elsif rising_edge(CLK_27_750) then
             if KEYPAD_FIRST_PASS = '1' then
                 if KEYPAD_FIRST_PASS_LAST = '0' then
                     KEYPAD_FIRST_PASS_LAST <= '1';
-                    PAGE_NUMBER <= to_integer(unsigned(PAGE_NUMBER_DIPSW));
+                    PAGE_NUMBER <= PAGE_NUMBER_DIPSW;
                 else
-                    if PAGE_UP_BUTTON = '1' then
-                        if BUTTON_DELAY_COUNTER = BUTTON_DELAY_COUNTER_MAX / 2 then
-                            if PAGE_NUMBER > 0 then
-                                PAGE_NUMBER <= PAGE_NUMBER - 1;
+                    if KEY_ACTIVE = '1' and KEY_ACTIVE_LAST = '0' then
+                        -- Page number entry
+                        if SUBPAGE_ENABLE = '1' then
+                            -- For subcode page
+                            if DIGIT_INDEX = 0 and KEY_VALUE(3 downto 2) = "00" then
+                                SUBPAGE_NUMBER(12 downto 11) <= KEY_VALUE(1 downto 0);
+                                DIGIT_INDEX <= 1;
+                            elsif DIGIT_INDEX = 1 then
+                                SUBPAGE_NUMBER(10 downto 7) <= KEY_VALUE;
+                                DIGIT_INDEX <= 2;
+                            elsif DIGIT_INDEX = 2 and KEY_VALUE(3) = '0' then
+                                SUBPAGE_NUMBER(6 downto 4) <= KEY_VALUE(2 downto 0);
+                                DIGIT_INDEX <= 3;
+                            elsif DIGIT_INDEX = 3 then
+                                SUBPAGE_NUMBER(3 downto 0) <= KEY_VALUE;
+                                DIGIT_INDEX <= 0;
+                            end if;
+                        else
+                            -- For page number
+                            if DIGIT_INDEX = 0 then
+                                PAGE_NUMBER(10 downto 8) <= KEY_VALUE(2 downto 0);
+                                DIGIT_INDEX <= 1;
+                            elsif DIGIT_INDEX = 1 then
+                                PAGE_NUMBER(7 downto 4) <= KEY_VALUE;
+                                DIGIT_INDEX <= 2;
                             else
-                                PAGE_NUMBER <= 2047;
+                                PAGE_NUMBER(3 downto 0) <= KEY_VALUE;
+                                DIGIT_INDEX <= 0;
+                            end if;
+                        end if;
+                    elsif PAGE_UP_BUTTON = '1' then
+                        if BUTTON_DELAY_COUNTER = BUTTON_DELAY_COUNTER_MAX / 2 then
+                            DIGIT_INDEX <= 0;
+                            if SUBPAGE_ENABLE = '1' then
+                                if SUBPAGE_NUMBER /= "0000000000000" then
+                                    SUBPAGE_NUMBER <= std_logic_vector(unsigned(SUBPAGE_NUMBER) - 1);
+                                else
+                                    SUBPAGE_NUMBER <= "1111111111111";
+                                end if;
+                            else
+                                if PAGE_NUMBER /= "00000000000" then
+                                    PAGE_NUMBER <= std_logic_vector(unsigned(PAGE_NUMBER) - 1);
+                                else
+                                    PAGE_NUMBER <= "11111111111";
+                                end if;
                             end if;
                         end if;
                         if BUTTON_DELAY_COUNTER < BUTTON_DELAY_COUNTER_MAX then
@@ -180,10 +240,19 @@ PAGE_NUMBER_CONTROLLER: process(CLK_27_750, RESET)
                         end if;
                     elsif PAGE_DOWN_BUTTON = '1' then
                         if BUTTON_DELAY_COUNTER = BUTTON_DELAY_COUNTER_MAX / 2 then
-                            if PAGE_NUMBER < 2047 then
-                                PAGE_NUMBER <= PAGE_NUMBER + 1;
+                            DIGIT_INDEX <= 0;
+                            if SUBPAGE_ENABLE = '1' then
+                                if SUBPAGE_NUMBER /= "1111111111111" then
+                                    SUBPAGE_NUMBER <= std_logic_vector(unsigned(SUBPAGE_NUMBER) + 1);
+                                else
+                                    SUBPAGE_NUMBER <= "0000000000000";
+                                end if;
                             else
-                                PAGE_NUMBER <= 0;
+                                if PAGE_NUMBER /= "11111111111" then
+                                    PAGE_NUMBER <= std_logic_vector(unsigned(PAGE_NUMBER) + 1);
+                                else
+                                    PAGE_NUMBER <= "00000000000";
+                                end if;
                             end if;
                         end if;
                         if BUTTON_DELAY_COUNTER < BUTTON_DELAY_COUNTER_MAX then
@@ -205,6 +274,16 @@ PAGE_NUMBER_CONTROLLER: process(CLK_27_750, RESET)
                     MIX_LAST <= '0';
                 end if;
                 
+                if SUBPAGE_BUTTON = '1' then
+                    if SUBPAGE_LAST = '0' then
+                        SUBPAGE_ENABLE <= not SUBPAGE_ENABLE;
+                        DIGIT_INDEX <= 0;
+                        SUBPAGE_LAST <= '1';
+                    end if;
+                else
+                    SUBPAGE_LAST <= '0';
+                end if;
+                
                 if REVEAL_BUTTON = '1' then
                     if REVEAL_LAST = '0' then
                         REVEAL_ENABLE <= not REVEAL_ENABLE;
@@ -213,6 +292,8 @@ PAGE_NUMBER_CONTROLLER: process(CLK_27_750, RESET)
                 else
                     REVEAL_LAST <= '0';
                 end if;
+                
+                KEY_ACTIVE_LAST <= KEY_ACTIVE;
             end if;
         end if;
     end process;
@@ -280,7 +361,29 @@ KEYPAD_CONTROLLER: entity work.KEYPAD
     KEYPAD_BUTTONS(11) & KEYPAD_BUTTONS(5);
     PAGE_UP_BUTTON <= KEYPAD_BUTTONS(12);
     PAGE_DOWN_BUTTON <= KEYPAD_BUTTONS(14);
+    KEY_0 <= KEYPAD_BUTTONS(13);
+    KEY_1 <= KEYPAD_BUTTONS(30);
+    KEY_2 <= KEYPAD_BUTTONS(31);
+    KEY_3 <= KEYPAD_BUTTONS(32);
+    KEY_4 <= KEYPAD_BUTTONS(24);
+    KEY_5 <= KEYPAD_BUTTONS(25);
+    KEY_6 <= KEYPAD_BUTTONS(26);
+    KEY_7 <= KEYPAD_BUTTONS(18);
+    KEY_8 <= KEYPAD_BUTTONS(19);
+    KEY_9 <= KEYPAD_BUTTONS(20);
+    KEY_ACTIVE <= KEY_0 or KEY_1 or KEY_2 or KEY_3 or KEY_4 or KEY_5 or KEY_6 or KEY_7 or KEY_8 or KEY_9;
+    KEY_VALUE <= "0000" when KEY_0 = '1' else
+                 "0001" when KEY_1 = '1' else
+                 "0010" when KEY_2 = '1' else
+                 "0011" when KEY_3 = '1' else
+                 "0100" when KEY_4 = '1' else
+                 "0101" when KEY_5 = '1' else
+                 "0110" when KEY_6 = '1' else
+                 "0111" when KEY_7 = '1' else
+                 "1000" when KEY_8 = '1' else
+                 "1001" when KEY_9 = '1' else "0000";
     MIX_BUTTON <= KEYPAD_BUTTONS(6);
+    SUBPAGE_BUTTON <= KEYPAD_BUTTONS(7);
     REVEAL_BUTTON <= KEYPAD_BUTTONS(8);
     AB_ENABLE <= KEYPAD_BUTTONS(34);
 
@@ -304,10 +407,10 @@ MEMORY_CONTROLLER: entity work.TXT_MEMORY_CONTROLLER
     MEM_ADDRESS_OUT => DPR_WRITE_ADDRESS,
     MEM_WREN_OUT => DPR_WRITE_EN,
     
-    REQ_MAGAZINE_IN => std_logic_vector(to_unsigned(PAGE_NUMBER, 11))(10 downto 8),
-    REQ_PAGE_IN => std_logic_vector(to_unsigned(PAGE_NUMBER, 11))(7 downto 0),
-    REQ_SUBCODE_IN => "0000000000000",
-    REQ_SUBCODE_SPEC_IN => '0'
+    REQ_MAGAZINE_IN => PAGE_NUMBER(10 downto 8),
+    REQ_PAGE_IN => PAGE_NUMBER(7 downto 0),
+    REQ_SUBCODE_IN => SUBPAGE_NUMBER,
+    REQ_SUBCODE_SPEC_IN => SUBPAGE_ENABLE
     );
 
 DUAL_PORT_RAM: entity work.DPR_IP_VARIATION
