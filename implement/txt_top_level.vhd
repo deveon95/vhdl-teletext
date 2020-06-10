@@ -121,6 +121,11 @@ signal SUBPAGE_BUTTON : std_logic;
 signal REVEAL_BUTTON  : std_logic;
 signal PAGE_UP_BUTTON    : std_logic;
 signal PAGE_DOWN_BUTTON  : std_logic;
+signal RED_BUTTON : std_logic;
+signal GRN_BUTTON : std_logic;
+signal YEL_BUTTON : std_logic;
+signal BLU_BUTTON : std_logic;
+signal IDX_BUTTON : std_logic;
 signal KEY_0 : std_logic;
 signal KEY_1 : std_logic;
 signal KEY_2 : std_logic;
@@ -144,6 +149,13 @@ signal SUBPAGE_LAST  : std_logic;
 signal REVEAL_LAST  : std_logic;
 signal DIGIT_INDEX : integer range 0 to 3;
 signal KEY_ACTIVE_LAST : std_logic;
+
+signal LAST_SUBCODE : std_logic_vector(12 downto 0);
+signal RED_PAGE     : std_logic_vector(10 downto 0);
+signal GRN_PAGE     : std_logic_vector(10 downto 0);
+signal YEL_PAGE     : std_logic_vector(10 downto 0);
+signal BLU_PAGE     : std_logic_vector(10 downto 0);
+signal IDX_PAGE     : std_logic_vector(10 downto 0);
 
 -- Dual Port RAM signals
 signal DPR_READ_DATA : std_logic_vector(6 downto 0);
@@ -279,6 +291,7 @@ PAGE_NUMBER_CONTROLLER: process(CLK_27_750, RESET)
                         SUBPAGE_ENABLE <= not SUBPAGE_ENABLE;
                         DIGIT_INDEX <= 0;
                         SUBPAGE_LAST <= '1';
+                        SUBPAGE_NUMBER <= LAST_SUBCODE;
                     end if;
                 else
                     SUBPAGE_LAST <= '0';
@@ -291,6 +304,31 @@ PAGE_NUMBER_CONTROLLER: process(CLK_27_750, RESET)
                     end if;
                 else
                     REVEAL_LAST <= '0';
+                end if;
+                
+                if RED_BUTTON = '1' and RED_PAGE(7 downto 0) /= "11111111" then
+                    DIGIT_INDEX <= 0;
+                    PAGE_NUMBER <= RED_PAGE;
+                end if;
+                
+                if GRN_BUTTON = '1' and GRN_PAGE(7 downto 0) /= "11111111" then
+                    DIGIT_INDEX <= 0;
+                    PAGE_NUMBER <= GRN_PAGE;
+                end if;
+                
+                if YEL_BUTTON = '1' and YEL_PAGE(7 downto 0) /= "11111111" then
+                    DIGIT_INDEX <= 0;
+                    PAGE_NUMBER <= YEL_PAGE;
+                end if;
+                
+                if BLU_BUTTON = '1' and BLU_PAGE(7 downto 0) /= "11111111" then
+                    DIGIT_INDEX <= 0;
+                    PAGE_NUMBER <= BLU_PAGE;
+                end if;
+                
+                if IDX_BUTTON = '1' and IDX_PAGE(7 downto 0) /= "11111111" then
+                    DIGIT_INDEX <= 0;
+                    PAGE_NUMBER <= IDX_PAGE;
                 end if;
                 
                 KEY_ACTIVE_LAST <= KEY_ACTIVE;
@@ -382,6 +420,11 @@ KEYPAD_CONTROLLER: entity work.KEYPAD
                  "0111" when KEY_7 = '1' else
                  "1000" when KEY_8 = '1' else
                  "1001" when KEY_9 = '1' else "0000";
+    RED_BUTTON <= KEYPAD_BUTTONS(33);
+    GRN_BUTTON <= KEYPAD_BUTTONS(27);
+    YEL_BUTTON <= KEYPAD_BUTTONS(21);
+    BLU_BUTTON <= KEYPAD_BUTTONS(15);
+    IDX_BUTTON <= KEYPAD_BUTTONS(9);
     MIX_BUTTON <= KEYPAD_BUTTONS(6);
     SUBPAGE_BUTTON <= KEYPAD_BUTTONS(7);
     REVEAL_BUTTON <= KEYPAD_BUTTONS(8);
@@ -410,7 +453,14 @@ MEMORY_CONTROLLER: entity work.TXT_MEMORY_CONTROLLER
     REQ_MAGAZINE_IN => PAGE_NUMBER(10 downto 8),
     REQ_PAGE_IN => PAGE_NUMBER(7 downto 0),
     REQ_SUBCODE_IN => SUBPAGE_NUMBER,
-    REQ_SUBCODE_SPEC_IN => SUBPAGE_ENABLE
+    REQ_SUBCODE_SPEC_IN => SUBPAGE_ENABLE,
+    
+    LAST_SUBCODE_OUT => LAST_SUBCODE,
+    RED_PAGE_OUT => RED_PAGE,
+    GRN_PAGE_OUT => GRN_PAGE,
+    YEL_PAGE_OUT => YEL_PAGE,
+    BLU_PAGE_OUT => BLU_PAGE,
+    IDX_PAGE_OUT => IDX_PAGE
     );
 
 DUAL_PORT_RAM: entity work.DPR_IP_VARIATION

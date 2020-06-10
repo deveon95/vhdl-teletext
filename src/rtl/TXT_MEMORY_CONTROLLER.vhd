@@ -4,28 +4,36 @@ use ieee.numeric_std.all;
 
 entity TXT_MEMORY_CONTROLLER is
     port (
-    CLK_27_750      : in  std_logic;
-    RESET           : in  std_logic;
+    CLK_27_750       : in  std_logic;
+    RESET            : in  std_logic;
     
-    WORD_IN         : in  std_logic_vector(6 downto 0);
-    WORD_CLOCK_IN   : in  std_logic;
-    FRAME_VALID_IN  : in  std_logic;
+    WORD_IN          : in  std_logic_vector(6 downto 0);
+    WORD_CLOCK_IN    : in  std_logic;
+    FRAME_VALID_IN   : in  std_logic;
     UPCOMING_FRAME_IN : in std_logic;
     
-    MAGAZINE_IN     : in  std_logic_vector(2 downto 0);
-    ROW_IN          : in  std_logic_vector(4 downto 0);
-    PAGE_IN         : in  std_logic_vector(7 downto 0);
-    SUBCODE_IN      : in  std_logic_vector(12 downto 0);
-    CONTROL_BITS_IN : in  std_logic_vector(10 downto 0);
+    MAGAZINE_IN      : in  std_logic_vector(2 downto 0);
+    ROW_IN           : in  std_logic_vector(4 downto 0);
+    PAGE_IN          : in  std_logic_vector(7 downto 0);
+    SUBCODE_IN       : in  std_logic_vector(12 downto 0);
+    CONTROL_BITS_IN  : in  std_logic_vector(10 downto 0);
     
-    MEM_DATA_OUT    : out std_logic_vector(6 downto 0);
-    MEM_ADDRESS_OUT : out std_logic_vector(9 downto 0);
-    MEM_WREN_OUT    : out std_logic;
+    MEM_DATA_OUT     : out std_logic_vector(6 downto 0);
+    MEM_ADDRESS_OUT  : out std_logic_vector(9 downto 0);
+    MEM_WREN_OUT     : out std_logic;
     
-    REQ_MAGAZINE_IN : in  std_logic_vector(2 downto 0);
-    REQ_PAGE_IN     : in  std_logic_vector(7 downto 0);
-    REQ_SUBCODE_IN  : in  std_logic_vector(12 downto 0);
-    REQ_SUBCODE_SPEC_IN : in std_logic
+    REQ_MAGAZINE_IN  : in  std_logic_vector(2 downto 0);
+    REQ_PAGE_IN      : in  std_logic_vector(7 downto 0);
+    REQ_SUBCODE_IN   : in  std_logic_vector(12 downto 0);
+    REQ_SUBCODE_SPEC_IN : in std_logic;
+    -- Signals for the page number controller
+    --LAST_PAGE_OUT    : out std_logic_vector(7 downto 0);
+    LAST_SUBCODE_OUT : out std_logic_vector(12 downto 0);
+    RED_PAGE_OUT     : out std_logic_vector(10 downto 0);
+    GRN_PAGE_OUT     : out std_logic_vector(10 downto 0);
+    YEL_PAGE_OUT     : out std_logic_vector(10 downto 0);
+    BLU_PAGE_OUT     : out std_logic_vector(10 downto 0);
+    IDX_PAGE_OUT     : out std_logic_vector(10 downto 0)
     );
     
 end entity TXT_MEMORY_CONTROLLER;
@@ -47,7 +55,7 @@ signal LINE_START_ADDRESS : integer range 0 to 1023;
 signal ADDRESS_COUNTER : integer range 0 to 1023;
 signal ROW_INTEGER : integer range 0 to 31;
 
-type STATE_TYPE is (WAIT_FOR_FRAME, RECEIVE_FRAME, NEXT_WORD, ERASE_MEMORY_START, ERASE_MEMORY, UPDATE_STATUS, UPDATE_STATUS_NEXT);
+type STATE_TYPE is (WAIT_FOR_FRAME, RECEIVE_FRAME, NEXT_WORD, ERASE_MEMORY_START, ERASE_MEMORY, UPDATE_STATUS, UPDATE_STATUS_NEXT, IGNORE_FRAME);
 signal STATE : STATE_TYPE;
 type STATUS_ARRAY_TYPE is array (0 to 7) of std_logic_vector(6 downto 0);
 signal STATUS_ARRAY : STATUS_ARRAY_TYPE;
@@ -87,6 +95,11 @@ MAIN: process(CLK_27_750, RESET)
             LAST_LOADED_PAGE <= (others => '1');
             LAST_LOADED_SUBCODE <= (others => '0');
             PAGE_FOUND_END <= '0';
+            RED_PAGE_OUT <= (others => '1');
+            GRN_PAGE_OUT <= (others => '1');
+            YEL_PAGE_OUT <= (others => '1');
+            BLU_PAGE_OUT <= (others => '1');
+            IDX_PAGE_OUT <= (others => '1');
         elsif rising_edge(CLK_27_750) then
             
             case STATE is
@@ -134,7 +147,47 @@ MAIN: process(CLK_27_750, RESET)
                     MEM_DATA_OUT <= WORD_IN;
                     -- IF statement suppresses write enable for header row prior to clock when page has not been found
                     if ROW_INTEGER /= 0 or PAGE_FOUND_END = '0' or ADDRESS_COUNTER >= 32 then
+                        -- Enable memory write signal only when current packet is a visible packet
                         MEM_WREN_OUT <= VISIBLE_PACKET;
+                    end if;
+                    -- Handle non-visible packets
+                    -- Fastext editorial links - Hamming code handling is done in TXT_DATA_PROCESSOR and the bits are rearranged
+                    if ROW_INTEGER = 27 then
+                        -- Set page number outputs
+                        case ADDRESS_COUNTER is
+                        when 0 => if WORD_IN /= "0000000" then STATE <= IGNORE_FRAME; end if;       -- Require designation code 0
+                        when 1 => RED_PAGE_OUT(3 downto 0) <= WORD_IN(3) & WORD_IN(2) & WORD_IN(1) & WORD_IN(0);
+                        when 2 => RED_PAGE_OUT(7 downto 4) <= WORD_IN(3) & WORD_IN(2) & WORD_IN(1) & WORD_IN(0);
+                        when 4 => RED_PAGE_OUT(8) <= WORD_IN(3) XOR MAGAZINE_IN(0);
+                        when 6 => RED_PAGE_OUT(10 downto 9) <= (WORD_IN(3) XOR MAGAZINE_IN(2)) & (WORD_IN(2) XOR MAGAZINE_IN(1));
+                        when 7 => GRN_PAGE_OUT(3 downto 0) <= WORD_IN(3) & WORD_IN(2) & WORD_IN(1) & WORD_IN(0);
+                        when 8 => GRN_PAGE_OUT(7 downto 4) <= WORD_IN(3) & WORD_IN(2) & WORD_IN(1) & WORD_IN(0);
+                        when 10 => GRN_PAGE_OUT(8) <= WORD_IN(3) XOR MAGAZINE_IN(0);
+                        when 12 => GRN_PAGE_OUT(10 downto 9) <= (WORD_IN(3) XOR MAGAZINE_IN(2)) & (WORD_IN(2) XOR MAGAZINE_IN(1));
+                        when 13 => YEL_PAGE_OUT(3 downto 0) <= WORD_IN(3) & WORD_IN(2) & WORD_IN(1) & WORD_IN(0);
+                        when 14 => YEL_PAGE_OUT(7 downto 4) <= WORD_IN(3) & WORD_IN(2) & WORD_IN(1) & WORD_IN(0);
+                        when 16 => YEL_PAGE_OUT(8) <= WORD_IN(3) XOR MAGAZINE_IN(0);
+                        when 18 => YEL_PAGE_OUT(10 downto 9) <= (WORD_IN(3) XOR MAGAZINE_IN(2)) & (WORD_IN(2) XOR MAGAZINE_IN(1));
+                        when 19 => BLU_PAGE_OUT(3 downto 0) <= WORD_IN(3) & WORD_IN(2) & WORD_IN(1) & WORD_IN(0);
+                        when 20 => BLU_PAGE_OUT(7 downto 4) <= WORD_IN(3) & WORD_IN(2) & WORD_IN(1) & WORD_IN(0);
+                        when 22 => BLU_PAGE_OUT(8) <= WORD_IN(3) XOR MAGAZINE_IN(0);
+                        when 24 => BLU_PAGE_OUT(10 downto 9) <= (WORD_IN(3) XOR MAGAZINE_IN(2)) & (WORD_IN(2) XOR MAGAZINE_IN(1));
+                        when 31 => IDX_PAGE_OUT(3 downto 0) <= WORD_IN(3) & WORD_IN(2) & WORD_IN(1) & WORD_IN(0);
+                        when 32 => IDX_PAGE_OUT(7 downto 4) <= WORD_IN(3) & WORD_IN(2) & WORD_IN(1) & WORD_IN(0);
+                        when 34 => IDX_PAGE_OUT(8) <= WORD_IN(3) XOR MAGAZINE_IN(0);
+                        when 36 => IDX_PAGE_OUT(10 downto 9) <= (WORD_IN(3) XOR MAGAZINE_IN(2)) & (WORD_IN(2) XOR MAGAZINE_IN(1));
+                        when others =>
+                        end case;
+                        -- Set page number outputs to invalid values if a Hamming 8/4 error is detected
+                        -- TXT_DATA_PROCESSOR indicates failed bytes by setting bits 4, 5 and 6 in the word
+                        if ADDRESS_COUNTER <= 36 and WORD_IN(4) = '1' then
+                            STATE <= IGNORE_FRAME;
+                            RED_PAGE_OUT <= (others => '1');
+                            GRN_PAGE_OUT <= (others => '1');
+                            YEL_PAGE_OUT <= (others => '1');
+                            BLU_PAGE_OUT <= (others => '1');
+                            IDX_PAGE_OUT <= (others => '1');
+                        end if;
                     end if;
                     STATE <= NEXT_WORD;
                 end if;
@@ -165,6 +218,10 @@ MAIN: process(CLK_27_750, RESET)
                 else
                     ADDRESS_COUNTER <= ADDRESS_COUNTER + 1;
                     STATE <= UPDATE_STATUS;
+                end if;
+            when IGNORE_FRAME =>
+                if FRAME_VALID_IN = '0' then
+                    STATE <= WAIT_FOR_FRAME;
                 end if;
             when others =>
                 STATE <= WAIT_FOR_FRAME;
@@ -214,6 +271,7 @@ MAIN: process(CLK_27_750, RESET)
     STATUS_ARRAY(7) <= "0000010" when PAGE_FOUND = '0' else "0000111";
 
     CLEAR_PAGE_FOUND <= '0' when LAST_LOADED_PAGE = REQ_PAGE_IN and LAST_LOADED_MAGAZINE = REQ_MAGAZINE_IN and (REQ_SUBCODE_SPEC_IN = '0' or LAST_LOADED_SUBCODE = REQ_SUBCODE_IN) else '1';
+    LAST_SUBCODE_OUT <= LAST_LOADED_SUBCODE;
     
 PAGE_FOUND_LATCH: process(CLK_27_750, RESET)
     begin
