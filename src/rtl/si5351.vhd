@@ -12,6 +12,8 @@ entity SI5351 is
     SCL_OUT : out std_logic;
     SDA_IN : in std_logic;
     SCL_IN : in std_logic;
+    REFRESH_RATE_SELECT_IN : in std_logic;
+    RESOLUTION_SELECT_IN : in std_logic;
     COMPLETE_OUT : out std_logic
     );
 end entity SI5351;
@@ -30,6 +32,8 @@ signal BIT_COUNTER : integer range 0 to 10;
 signal BYTE_COUNTER : integer range 0 to CONFIG_DATA_SIZE - 1;
 signal BYTE_COUNTER_SLV : std_logic_vector(7 downto 0);
 signal SDA_SYNCED, SDA_SYNCER, SCL_SYNCED, SCL_SYNCER : std_logic;
+signal REFRESH_RATE_SELECT_LATCHED : std_logic;
+signal RESOLUTION_SELECT_LATCHED : std_logic;
 
 type DATA_ARRAY is array (0 to CONFIG_DATA_SIZE - 1) of std_logic_vector(7 downto 0);
 
@@ -50,6 +54,111 @@ x"00", x"00", x"00", x"05", x"00", x"0E", x"33", x"00",         -- 24..31
 x"00", x"01", x"00", x"32", x"00", x"0C", x"6E", x"00",         -- 32..39
 x"00", x"04", x"00", x"01", x"00", x"0B", x"00", x"00",         -- 40..47
 x"00", x"00", x"00", x"01", x"00", x"0D", x"00", x"00",         -- 48..55
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 56..63
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 64..71
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 72..79
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 80..87
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 88..95
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 96..103
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 104..111
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 112..119
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 120..127
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 128..135
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 136..143
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 144..151
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 152..159
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 160..167
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 168..175
+x"00", x"00", x"00", x"00", x"00", x"30", x"00", x"D2",         -- 176..183
+x"60", x"60", x"00", x"C0", x"00", x"00", x"00", x"00",         -- 184..191
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 192..199
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 200..207
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 208..215
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 216..223
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 224..231
+x"00");
+
+-- CLK0: 27.750 MHz
+-- CLK1: 32.400 MHz
+-- CLK2: disabled
+constant DATA_576P60 : DATA_ARRAY := (
+x"00", x"00", x"18", x"00", x"00", x"00", x"00", x"00",         -- 0..7
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 8..15
+x"6F", x"4F", x"83", x"80", x"80", x"80", x"80", x"80",         -- 16..23
+x"00", x"00", x"00", x"7D", x"00", x"0E", x"D9", x"00",         -- 24..31
+x"00", x"0B", x"00", x"32", x"00", x"0C", x"6E", x"00",         -- 32..39
+x"00", x"04", x"00", x"01", x"00", x"0B", x"00", x"00",         -- 40..47
+x"00", x"00", x"00", x"01", x"00", x"0B", x"00", x"00",         -- 48..55
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 56..63
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 64..71
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 72..79
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 80..87
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 88..95
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 96..103
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 104..111
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 112..119
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 120..127
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 128..135
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 136..143
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 144..151
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 152..159
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 160..167
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 168..175
+x"00", x"00", x"00", x"00", x"00", x"30", x"00", x"D2",         -- 176..183
+x"60", x"60", x"00", x"C0", x"00", x"00", x"00", x"00",         -- 184..191
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 192..199
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 200..207
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 208..215
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 216..223
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 224..231
+x"00");
+
+-- CLK0: 27.750 MHz
+-- CLK1: 33.333 MHz
+-- CLK2: disabled
+constant DATA_600P50 : DATA_ARRAY := (
+x"00", x"00", x"18", x"00", x"00", x"00", x"00", x"00",         -- 0..7
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 8..15
+x"6F", x"4F", x"83", x"80", x"80", x"80", x"80", x"80",         -- 16..23
+x"00", x"00", x"E8", x"48", x"00", x"0F", x"55", x"10",         -- 24..31
+x"A2", x"98", x"00", x"32", x"00", x"0C", x"6E", x"00",         -- 32..39
+x"00", x"04", x"00", x"01", x"00", x"0B", x"00", x"00",         -- 40..47
+x"00", x"00", x"00", x"01", x"00", x"0B", x"00", x"00",         -- 48..55
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 56..63
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 64..71
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 72..79
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 80..87
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 88..95
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 96..103
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 104..111
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 112..119
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 120..127
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 128..135
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 136..143
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 144..151
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 152..159
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 160..167
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 168..175
+x"00", x"00", x"00", x"00", x"00", x"30", x"00", x"D2",         -- 176..183
+x"60", x"60", x"00", x"C0", x"00", x"00", x"00", x"00",         -- 184..191
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 192..199
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 200..207
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 208..215
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 216..223
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 224..231
+x"00");
+
+-- CLK0: 27.750 MHz
+-- CLK1: 40.000 MHz
+-- CLK2: disabled
+constant DATA_600P60 : DATA_ARRAY := (
+x"00", x"00", x"18", x"00", x"00", x"00", x"00", x"00",         -- 0..7
+x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 8..15
+x"6F", x"4F", x"83", x"80", x"80", x"80", x"C0", x"80",         -- 16..23
+x"00", x"00", x"00", x"01", x"00", x"0E", x"00", x"00",         -- 24..31
+x"00", x"00", x"00", x"32", x"00", x"0C", x"6E", x"00",         -- 32..39
+x"00", x"04", x"00", x"01", x"00", x"0B", x"00", x"00",         -- 40..47
+x"00", x"00", x"00", x"01", x"00", x"08", x"00", x"00",         -- 48..55
 x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 56..63
 x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 64..71
 x"00", x"00", x"00", x"00", x"00", x"00", x"00", x"00",         -- 72..79
@@ -98,6 +207,8 @@ begin
         SDA_SYNCED <= '0';
         SCL_SYNCER <= '0';
         SCL_SYNCED <= '0';
+        REFRESH_RATE_SELECT_LATCHED <= '0';
+        RESOLUTION_SELECT_LATCHED <= '0';
     elsif rising_edge(CLOCK) then
         SDA_SYNCER <= SDA_IN;
         SDA_SYNCED <= SDA_SYNCER;
@@ -110,6 +221,9 @@ begin
                 DELAY_COUNTER <= 0;
                 SUBBIT_COUNTER <= 0;
                 BIT_COUNTER <= 0;
+                BYTE_COUNTER <= 0;
+                REFRESH_RATE_SELECT_LATCHED <= REFRESH_RATE_SELECT_IN;
+                RESOLUTION_SELECT_LATCHED <= RESOLUTION_SELECT_IN;
                 if DELAY_COUNTER >= INIT_LENGTH then
                     STATE <= SLAVE_ADDRESS;
                     DELAY_COUNTER <= 0;
@@ -177,7 +291,16 @@ begin
                         -- Starting at register address 0 so '0' for every bit
                         SDA_OUT <= BYTE_COUNTER_SLV(8 - BIT_COUNTER);
                     else
-                        SDA_OUT <= DATA_576P50(BYTE_COUNTER)(8 - BIT_COUNTER);
+                        -- Select output data according to resolution and refresh rate selection
+                        if REFRESH_RATE_SELECT_IN = '1' and RESOLUTION_SELECT_IN = '1' then
+                            SDA_OUT <= DATA_600P60(BYTE_COUNTER)(8 - BIT_COUNTER);
+                        elsif REFRESH_RATE_SELECT_IN = '0' and RESOLUTION_SELECT_IN = '1' then
+                            SDA_OUT <= DATA_600P50(BYTE_COUNTER)(8 - BIT_COUNTER);
+                        elsif REFRESH_RATE_SELECT_IN = '1' and RESOLUTION_SELECT_IN = '0' then
+                            SDA_OUT <= DATA_576P60(BYTE_COUNTER)(8 - BIT_COUNTER);
+                        else
+                            SDA_OUT <= DATA_576P50(BYTE_COUNTER)(8 - BIT_COUNTER);
+                        end if;
                     end if;
                 end if;
             when STOP =>
@@ -192,6 +315,14 @@ begin
                 SDA_OUT <= '1';
                 SCL_OUT <= '1';
                 COMPLETE_OUT <= '1';
+                -- Reconfigure when a change is made to the resolution and refresh rate selection
+                -- Note that the SI5351 will always be reconfigured a second time at start-up whenever
+                -- any mode other than 576p50 is selected because the keypad controller uses one of the
+                -- programmable clocks, so the DIP switch positions are not read until after the clock
+                -- has been programmed for the first time.
+                if REFRESH_RATE_SELECT_LATCHED /= REFRESH_RATE_SELECT_IN or RESOLUTION_SELECT_IN /= RESOLUTION_SELECT_LATCHED then
+                    STATE <= INIT;
+                end if;
             when OTHERS =>
                 SDA_OUT <= '1';
                 SCL_OUT <= '1';

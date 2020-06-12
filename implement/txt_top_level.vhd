@@ -144,6 +144,8 @@ signal MIX_ENABLE  : std_logic;
 signal SUBPAGE_ENABLE : std_logic;
 signal REVEAL_ENABLE  : std_logic;
 signal AB_ENABLE : std_logic;
+signal REFRESH_RATE_SELECT : std_logic;
+signal RESOLUTION_SELECT : std_logic;
 signal MIX_LAST  : std_logic;
 signal SUBPAGE_LAST  : std_logic;
 signal REVEAL_LAST  : std_logic;
@@ -429,6 +431,8 @@ KEYPAD_CONTROLLER: entity work.KEYPAD
     SUBPAGE_BUTTON <= KEYPAD_BUTTONS(7);
     REVEAL_BUTTON <= KEYPAD_BUTTONS(8);
     AB_ENABLE <= KEYPAD_BUTTONS(34);
+    RESOLUTION_SELECT <= KEYPAD_BUTTONS(1);
+    REFRESH_RATE_SELECT <= KEYPAD_BUTTONS(2);
 
 MEMORY_CONTROLLER: entity work.TXT_MEMORY_CONTROLLER
     port map(
@@ -543,12 +547,12 @@ CLOCK_CONTROLLER: entity work.SI5351
     SCL_OUT => PRCLK_SCL_INT,
     SDA_IN => PRCLK_SDA,
     SCL_IN => PRCLK_SCL,
-    COMPLETE_OUT => open);--LED_OUT);
+    REFRESH_RATE_SELECT_IN => REFRESH_RATE_SELECT,
+    RESOLUTION_SELECT_IN => RESOLUTION_SELECT,
+    COMPLETE_OUT => LED_OUT);
     
     PRCLK_SDA <= '0' when PRCLK_SDA_INT = '0' else 'Z';
     PRCLK_SCL <= '0' when PRCLK_SCL_INT = '0' else 'Z';
-    --PRCLK_SDA <= 'Z';
-    --PRCLK_SCL <= 'Z';
 
 end architecture;
     
