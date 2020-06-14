@@ -45,7 +45,7 @@ entity TXT_TOP_LEVEL is
     VP_RTS0_IN : in std_logic;
     VP_RTS1_IN : in std_logic;
     VP_LLC_IN : in std_logic;
-    -- VGA interface (PMOD connector)
+    -- VGA interface
     R_OUT      : out std_logic;
     G_OUT      : out std_logic;
     B_OUT      : out std_logic;
@@ -64,12 +64,21 @@ architecture rtl of TXT_TOP_LEVEL is
 -- Parameters for 720x576 resolution
 constant H_SIZE : integer := 720;
 constant H_FRONT_PORCH : integer := 16;
-constant H_SYNC_PULSE : integer := 96;
-constant H_BACK_PORCH : integer := 32;
+constant H_SYNC_PULSE : integer := 80;
+constant H_BACK_PORCH : integer := 48;
 constant V_SIZE : integer := 576;
-constant V_FRONT_PORCH : integer := 23;
-constant V_SYNC_PULSE : integer := 3;
-constant V_BACK_PORCH : integer := 23;
+constant V_FRONT_PORCH : integer := 10;
+constant V_SYNC_PULSE : integer := 2;
+constant V_BACK_PORCH : integer := 37;
+
+-- constant H_SIZE : integer := 720;
+-- constant H_FRONT_PORCH : integer := 16;
+-- constant H_SYNC_PULSE : integer := 96;
+-- constant H_BACK_PORCH : integer := 32;
+-- constant V_SIZE : integer := 576;
+-- constant V_FRONT_PORCH : integer := 23;
+-- constant V_SYNC_PULSE : integer := 3;
+-- constant V_BACK_PORCH : integer := 23;
 -- Parameters for 640x480 resolution
 --constant H_SIZE : integer := 640;
 --constant H_FRONT_PORCH : integer := 16;
@@ -165,16 +174,35 @@ signal DPR_READ_ADDRESS : std_logic_vector(9 downto 0);
 signal DPR_WRITE_ADDRESS : std_logic_vector(9 downto 0);
 signal DPR_WRITE_EN : std_logic;
 signal DPR_WRITE_DATA : std_logic_vector(6 downto 0);
+
+-- Video signals
 signal NEW_ROW : std_logic;
 signal NEW_SCREEN : std_logic;
 signal R : std_logic;
 signal G : std_logic;
 signal B : std_logic;
+signal TMDS_D0_UNBUF : std_logic;
+signal TMDS_D1_UNBUF : std_logic;
+signal TMDS_D2_UNBUF : std_logic;
+signal TMDS_CLK_UNBUF : std_logic;
+signal CLK_VIDEO_PIXEL : std_logic;
+signal CLK_VIDEO_BIT : std_logic;
 
 -- Full component instantiation of Verilog module required due to Quartus bug
-component HDMI
-port (inclk, R_IN, G_IN, B_IN : in std_logic;
-      NEW_ROW_OUT, NEW_SCREEN_OUT, TMDS2, TMDS1, TMDS0, TMDS_clock : out std_logic);
+--component HDMI
+--port (inclk, R_IN, G_IN, B_IN : in std_logic;
+--      NEW_ROW_OUT, NEW_SCREEN_OUT, TMDS2, TMDS1, TMDS0, TMDS_clock : out std_logic);
+--end component;
+
+component obuf_iobuf_out_tvs
+port (datain : in std_logic;
+      dataout : out std_logic);
+end component;
+
+component pll
+port (inclk0 : in std_logic;
+      c0 : out std_logic;
+      c1 : out std_logic);
 end component;
 
 begin
@@ -496,7 +524,13 @@ DISPLAY_GENERATOR: entity work.DISPLAY_GENERATOR
     G_OUT => G,
     B_OUT => B);
 
-VGA: entity work.VGA
+PLL_HDMI: pll
+    port map(
+    inclk0 => CLK_VIDEO,
+    c0 => CLK_VIDEO_PIXEL,
+    c1 => CLK_VIDEO_BIT);
+
+HDMI: entity work.HDMI
     generic map(
     H_SIZE => H_SIZE,
     H_FRONT_PORCH => H_FRONT_PORCH,
@@ -508,31 +542,51 @@ VGA: entity work.VGA
     V_BACK_PORCH => V_BACK_PORCH)
     port map(
     RESET => RESET,
-    CLK => CLK_VIDEO,
-    R_IN => R,
-    G_IN => G,
-    B_IN => B,
-    NEW_ROW_OUT => open,
-    NEW_SCREEN_OUT => open,
-    R_OUT => R_OUT,
-    G_OUT => G_OUT,
-    B_OUT => B_OUT,
-    HSYNC_OUT => HSYNC_OUT,
-    VSYNC_OUT => VSYNC_OUT);
-    
-HDMI_FPGA4FUN: HDMI
-    port map(
-    inclk => CLK_VIDEO,
-    R_IN => R,
-    G_IN => G,
-    B_IN => B,
+    CLK_PIXEL => CLK_VIDEO_PIXEL,
+    CLK_BIT => CLK_VIDEO_BIT,
+    R_IN => R & R & R & R & R & R & R & R,
+    G_IN => G & G & G & G & G & G & G & G,
+    B_IN => B & B & B & B & B & B & B & B,
     NEW_ROW_OUT => NEW_ROW,
     NEW_SCREEN_OUT => NEW_SCREEN,
-    TMDS2 => TMDS_D2,
-    TMDS1 => TMDS_D1,
-    TMDS0 => TMDS_D0,
-    TMDS_clock => TMDS_CLK
-    );
+    R_OUT => TMDS_D2_UNBUF,
+    G_OUT => TMDS_D1_UNBUF,
+    B_OUT => TMDS_D0_UNBUF,
+    CLK_OUT => TMDS_CLK_UNBUF);
+    
+BUF_D0: obuf_iobuf_out_tvs
+    port map(
+    datain => TMDS_D0_UNBUF,
+    dataout => TMDS_D0);
+    
+BUF_D1: obuf_iobuf_out_tvs
+    port map(
+    datain => TMDS_D1_UNBUF,
+    dataout => TMDS_D1);
+    
+BUF_D2: obuf_iobuf_out_tvs
+    port map(
+    datain => TMDS_D2_UNBUF,
+    dataout => TMDS_D2);
+    
+BUF_CLK: obuf_iobuf_out_tvs
+    port map(
+    datain => TMDS_CLK_UNBUF,
+    dataout => TMDS_CLK);
+    
+-- HDMI_FPGA4FUN: HDMI
+    -- port map(
+    -- inclk => CLK_VIDEO,
+    -- R_IN => R,
+    -- G_IN => G,
+    -- B_IN => B,
+    -- NEW_ROW_OUT => NEW_ROW,
+    -- NEW_SCREEN_OUT => NEW_SCREEN,
+    -- TMDS2 => TMDS_D2,
+    -- TMDS1 => TMDS_D1,
+    -- TMDS0 => TMDS_D0,
+    -- TMDS_clock => TMDS_CLK
+    -- );
     
 INTERNAL_OSCILLATOR: entity work.intosc
     port map(
