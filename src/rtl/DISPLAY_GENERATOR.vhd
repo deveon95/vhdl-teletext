@@ -107,6 +107,10 @@ signal NEXT_DH : std_logic;
 signal CURRENT_PIXEL : std_logic;
 signal DISP_ATTRIBUTE : std_logic;
 signal SIZE_SELECT : std_logic;
+signal MIX_SYNCER, MIX_SYNCED : std_logic;
+signal REVEAL_SYNCER, REVEAL_SYNCED : std_logic;
+signal AB_EN_SYNCER, AB_EN_SYNCED : std_logic;
+signal SIZE_SELECT_SYNCER, SIZE_SELECT_SYNCED : std_logic;
 -- Needed for some non-compliant services
 signal FOREGROUND_BLACK_ENABLE : std_logic;
 
@@ -118,7 +122,7 @@ begin
     
     MEMORY_DATA <= MEMORY_DATA_IN;
     
-    FOREGROUND_BLACK_ENABLE <= AB_EN_IN;
+    FOREGROUND_BLACK_ENABLE <= AB_EN_SYNCED;
 
 CGROM: entity work.CGROM
     port map(
@@ -165,7 +169,7 @@ ACTIVE_AREA_CONTROLLER: process(CLK, RESET)
             END_OF_ROW <= '0';
             SIZE_SELECT <= '0';
         elsif rising_edge(CLK) then
-            SIZE_SELECT <= SIZE_SELECT_IN;
+            SIZE_SELECT <= SIZE_SELECT_SYNCED;
             if NEW_SCREEN_IN = '1' then
                 ROW_COUNTER <= 0;
                 NEXT_V_PIXEL <= '0';
@@ -251,8 +255,10 @@ DISPLAY_GEN: process(CLK, RESET)
             DH_THIS_ROW <= '0';
             DH <= '0';
             NEXT_DH <= '0';
+            MIX_SYNCER <= '0';
+            MIX_SYNCED <= '0';
         elsif rising_edge(CLK) then
-            DISP_ATTRIBUTE <= ((NOT CONCEAL) OR REVEAL_IN) AND ((NOT FLASH) OR FLASH_TIMER_PULSE);
+            DISP_ATTRIBUTE <= ((NOT CONCEAL) OR REVEAL_SYNCED) AND ((NOT FLASH) OR FLASH_TIMER_PULSE);
             NEXT_H_PIXEL_D <= NEXT_H_PIXEL;
             CHAR_COL_COUNTER_D <= CHAR_COL_COUNTER;
             FG_R_D <= FG_R;
@@ -261,6 +267,14 @@ DISPLAY_GEN: process(CLK, RESET)
             BG_R_D <= BG_R;
             BG_G_D <= BG_G;
             BG_B_D <= BG_B;
+            MIX_SYNCER <= MIX_IN;
+            MIX_SYNCED <= MIX_SYNCER;
+            REVEAL_SYNCER <= REVEAL_IN;
+            REVEAL_SYNCED <= REVEAL_SYNCER;
+            AB_EN_SYNCER <= AB_EN_IN;
+            AB_EN_SYNCED <= AB_EN_SYNCER;
+            SIZE_SELECT_SYNCER <= SIZE_SELECT_IN;
+            SIZE_SELECT_SYNCED <= SIZE_SELECT_SYNCER;
             
             if FLASH_TIMER < FLASH_DURATION then
                 FLASH_TIMER <= FLASH_TIMER + 1;
@@ -445,9 +459,9 @@ DISPLAY_GEN: process(CLK, RESET)
             end if;
         end if;
     end process;
-    R_OUT <= ((CURRENT_PIXEL AND FG_R_D AND DISP_ATTRIBUTE) or (((NOT CURRENT_PIXEL) OR (NOT DISP_ATTRIBUTE)) AND BG_R_D AND (NOT MIX_IN)));
-    G_OUT <= ((CURRENT_PIXEL AND FG_G_D AND DISP_ATTRIBUTE) or (((NOT CURRENT_PIXEL) OR (NOT DISP_ATTRIBUTE)) AND BG_G_D AND (NOT MIX_IN)));
-    B_OUT <= ((CURRENT_PIXEL AND FG_B_D AND DISP_ATTRIBUTE) or (((NOT CURRENT_PIXEL) OR (NOT DISP_ATTRIBUTE)) AND BG_B_D AND (NOT MIX_IN)));
+    R_OUT <= ((CURRENT_PIXEL AND FG_R_D AND DISP_ATTRIBUTE) or (((NOT CURRENT_PIXEL) OR (NOT DISP_ATTRIBUTE)) AND BG_R_D AND (NOT MIX_SYNCED)));
+    G_OUT <= ((CURRENT_PIXEL AND FG_G_D AND DISP_ATTRIBUTE) or (((NOT CURRENT_PIXEL) OR (NOT DISP_ATTRIBUTE)) AND BG_G_D AND (NOT MIX_SYNCED)));
+    B_OUT <= ((CURRENT_PIXEL AND FG_B_D AND DISP_ATTRIBUTE) or (((NOT CURRENT_PIXEL) OR (NOT DISP_ATTRIBUTE)) AND BG_B_D AND (NOT MIX_SYNCED)));
     
     FLASH_TIMER_PULSE <= '1' when FLASH_TIMER < FLASH_DURATION / 2 else '0';
 end architecture;

@@ -49,7 +49,7 @@ signal V_ACTIVE : std_logic;
 signal HSYNC : std_logic;
 signal VSYNC : std_logic;
 signal VIDEO_ACTIVE : std_logic;
-signal RESOLUTION_SELECT : std_logic;
+signal RESOLUTION_SELECT, RES_SYNCER : std_logic;
 
 signal R_RAW : std_logic_vector(7 downto 0);
 signal G_RAW : std_logic_vector(7 downto 0);
@@ -117,8 +117,10 @@ SYNC_GENERATOR: process (CLK_PIXEL, RESET)
             V_ACTIVE <= '0';
             VSYNC <= '0';
             RESOLUTION_SELECT <= '0';
+            RES_SYNCER <= '0';
         elsif rising_edge(CLK_PIXEL) then
-            RESOLUTION_SELECT <= RESOLUTION_SELECT_IN;
+            RES_SYNCER <= RESOLUTION_SELECT_IN;
+            RESOLUTION_SELECT <= RES_SYNCER;
             
             if RESOLUTION_SELECT = '0' then
                 if H_COUNT < H_SIZE_1 then

@@ -32,6 +32,8 @@ signal BIT_COUNTER : integer range 0 to 10;
 signal BYTE_COUNTER : integer range 0 to CONFIG_DATA_SIZE - 1;
 signal BYTE_COUNTER_SLV : std_logic_vector(7 downto 0);
 signal SDA_SYNCED, SDA_SYNCER, SCL_SYNCED, SCL_SYNCER : std_logic;
+signal REF_SYNCER, REF_SYNCED : std_logic;
+signal RES_SYNCER, RES_SYNCED : std_logic;
 signal REFRESH_RATE_SELECT_LATCHED : std_logic;
 signal RESOLUTION_SELECT_LATCHED : std_logic;
 
@@ -207,6 +209,10 @@ begin
         SDA_SYNCED <= '0';
         SCL_SYNCER <= '0';
         SCL_SYNCED <= '0';
+        REF_SYNCER <= '0';
+        RES_SYNCER <= '0';
+        REF_SYNCED <= '0';
+        RES_SYNCED <= '0';
         REFRESH_RATE_SELECT_LATCHED <= '0';
         RESOLUTION_SELECT_LATCHED <= '0';
     elsif rising_edge(CLOCK) then
@@ -214,6 +220,10 @@ begin
         SDA_SYNCED <= SDA_SYNCER;
         SCL_SYNCER <= SCL_IN;
         SCL_SYNCED <= SCL_SYNCER;
+        RES_SYNCER <= RESOLUTION_SELECT_IN;
+        RES_SYNCED <= RES_SYNCER;
+        REF_SYNCER <= REFRESH_RATE_SELECT_IN;
+        REF_SYNCED <= REF_SYNCER;
         case STATE is
             when INIT =>
                 SDA_OUT <= '1';
@@ -222,8 +232,8 @@ begin
                 SUBBIT_COUNTER <= 0;
                 BIT_COUNTER <= 0;
                 BYTE_COUNTER <= 0;
-                REFRESH_RATE_SELECT_LATCHED <= REFRESH_RATE_SELECT_IN;
-                RESOLUTION_SELECT_LATCHED <= RESOLUTION_SELECT_IN;
+                REFRESH_RATE_SELECT_LATCHED <= REF_SYNCED;
+                RESOLUTION_SELECT_LATCHED <= RES_SYNCED;
                 if DELAY_COUNTER >= INIT_LENGTH then
                     STATE <= SLAVE_ADDRESS;
                     DELAY_COUNTER <= 0;
@@ -292,11 +302,11 @@ begin
                         SDA_OUT <= BYTE_COUNTER_SLV(8 - BIT_COUNTER);
                     else
                         -- Select output data according to resolution and refresh rate selection
-                        if REFRESH_RATE_SELECT_IN = '1' and RESOLUTION_SELECT_IN = '1' then
+                        if REFRESH_RATE_SELECT_LATCHED = '1' and RESOLUTION_SELECT_LATCHED = '1' then
                             SDA_OUT <= DATA_600P60(BYTE_COUNTER)(8 - BIT_COUNTER);
-                        elsif REFRESH_RATE_SELECT_IN = '0' and RESOLUTION_SELECT_IN = '1' then
+                        elsif REFRESH_RATE_SELECT_LATCHED = '0' and RESOLUTION_SELECT_LATCHED = '1' then
                             SDA_OUT <= DATA_600P50(BYTE_COUNTER)(8 - BIT_COUNTER);
-                        elsif REFRESH_RATE_SELECT_IN = '1' and RESOLUTION_SELECT_IN = '0' then
+                        elsif REFRESH_RATE_SELECT_LATCHED = '1' and RESOLUTION_SELECT_LATCHED = '0' then
                             SDA_OUT <= DATA_576P60(BYTE_COUNTER)(8 - BIT_COUNTER);
                         else
                             SDA_OUT <= DATA_576P50(BYTE_COUNTER)(8 - BIT_COUNTER);
@@ -320,7 +330,7 @@ begin
                 -- any mode other than 576p50 is selected because the keypad controller uses one of the
                 -- programmable clocks, so the DIP switch positions are not read until after the clock
                 -- has been programmed for the first time.
-                if REFRESH_RATE_SELECT_LATCHED /= REFRESH_RATE_SELECT_IN or RESOLUTION_SELECT_IN /= RESOLUTION_SELECT_LATCHED then
+                if REFRESH_RATE_SELECT_LATCHED /= REF_SYNCED or RESOLUTION_SELECT_LATCHED /= RES_SYNCED then
                     STATE <= INIT;
                 end if;
             when OTHERS =>
