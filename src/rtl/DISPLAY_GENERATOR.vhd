@@ -1,8 +1,18 @@
+-- DISPLAY_GENERATOR.vhd
+-- Generates the teletext display using data from RAM
+-- Supports selection of two resolutions; the second resolution must be the larger of the two
+-- Copyright 2020 Nick Schollar
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity DISPLAY_GENERATOR is
+    generic (
+    H_SIZE_1        : integer;
+    V_SIZE_1        : integer;
+    H_SIZE_2        : integer;
+    V_SIZE_2        : integer);
 port (
     CLK : in std_logic;
     RESET : in std_logic;
@@ -10,6 +20,7 @@ port (
     REVEAL_IN : in std_logic;
     MIX_IN : in std_logic;
     AB_EN_IN : in std_logic;
+    SIZE_SELECT_IN : in std_logic;
     
     MEMORY_DATA_IN : in std_logic_vector(6 downto 0);
     MEMORY_ADDRESS_OUT : out std_logic_vector(9 downto 0);
@@ -27,8 +38,6 @@ architecture RTL of DISPLAY_GENERATOR is
 
 constant FLASH_DURATION : integer := 25000000;
 
-constant H_SIZE : integer := 720;
-constant V_SIZE : integer := 576;
 constant H_CHAR_SIZE : integer := 6;        -- This parameter must be set to suit the CGROM
 constant V_CHAR_SIZE : integer := 11;
 constant V_CHAR_SIZE_BITS : integer := 4;   -- Number of bits required for std_logic_vector representation of the above
@@ -41,14 +50,18 @@ constant H_PIXEL_STRETCH : integer := 2;
 
 constant DISPLAY_AREA_WIDTH : integer := H_CHAR_SIZE * H_PIXEL_STRETCH * TEXT_COLS;
 constant DISPLAY_AREA_HEIGHT : integer := V_CHAR_SIZE * V_PIXEL_STRETCH * TEXT_LINES;
-constant DISPLAY_AREA_LEFT : integer := (H_SIZE - DISPLAY_AREA_WIDTH) / 2;
-constant DISPLAY_AREA_RIGHT : integer := (H_SIZE + DISPLAY_AREA_WIDTH) / 2;
-constant DISPLAY_AREA_TOP : integer := (V_SIZE - DISPLAY_AREA_HEIGHT) / 2;
-constant DISPLAY_AREA_BOTTOM : integer := (V_SIZE + DISPLAY_AREA_HEIGHT) / 2;
+constant DISPLAY_AREA_1_LEFT : integer := (H_SIZE_1 - DISPLAY_AREA_WIDTH) / 2;
+constant DISPLAY_AREA_1_RIGHT : integer := (H_SIZE_1 + DISPLAY_AREA_WIDTH) / 2;
+constant DISPLAY_AREA_1_TOP : integer := (V_SIZE_1 - DISPLAY_AREA_HEIGHT) / 2;
+constant DISPLAY_AREA_1_BOTTOM : integer := (V_SIZE_1 + DISPLAY_AREA_HEIGHT) / 2;
+constant DISPLAY_AREA_2_LEFT : integer := (H_SIZE_2 - DISPLAY_AREA_WIDTH) / 2;
+constant DISPLAY_AREA_2_RIGHT : integer := (H_SIZE_2 + DISPLAY_AREA_WIDTH) / 2;
+constant DISPLAY_AREA_2_TOP : integer := (V_SIZE_2 - DISPLAY_AREA_HEIGHT) / 2;
+constant DISPLAY_AREA_2_BOTTOM : integer := (V_SIZE_2 + DISPLAY_AREA_HEIGHT) / 2;
 
 signal MEMORY_DATA : std_logic_vector(6 downto 0);
-signal PIXEL_COUNTER : integer range 0 to H_SIZE - 1;
-signal ROW_COUNTER : integer range 0 to V_SIZE - 1;
+signal PIXEL_COUNTER : integer range 0 to H_SIZE_2 - 1;
+signal ROW_COUNTER : integer range 0 to V_SIZE_2 - 1;
 signal V_PIXEL_STRETCH_COUNTER : integer range 0 to V_PIXEL_STRETCH - 1;
 signal H_PIXEL_STRETCH_COUNTER : integer range 0 to V_PIXEL_STRETCH - 1;
 signal CHAR_COUNTER : integer range 0 to TEXT_LINES * TEXT_COLS - 1;
@@ -93,6 +106,7 @@ signal DH : std_logic;
 signal NEXT_DH : std_logic;
 signal CURRENT_PIXEL : std_logic;
 signal DISP_ATTRIBUTE : std_logic;
+signal SIZE_SELECT : std_logic;
 -- Needed for some non-compliant services
 signal FOREGROUND_BLACK_ENABLE : std_logic;
 
@@ -149,7 +163,9 @@ ACTIVE_AREA_CONTROLLER: process(CLK, RESET)
             V_PIXEL_STRETCH_COUNTER <= 0;
             H_PIXEL_STRETCH_COUNTER <= 0;
             END_OF_ROW <= '0';
+            SIZE_SELECT <= '0';
         elsif rising_edge(CLK) then
+            SIZE_SELECT <= SIZE_SELECT_IN;
             if NEW_SCREEN_IN = '1' then
                 ROW_COUNTER <= 0;
                 NEXT_V_PIXEL <= '0';
@@ -158,10 +174,10 @@ ACTIVE_AREA_CONTROLLER: process(CLK, RESET)
             else
                 if NEW_ROW_IN = '1' then
                     PIXEL_COUNTER <= 0;
-                    if ROW_COUNTER < V_SIZE - 1 then
+                    if (ROW_COUNTER < (V_SIZE_1 - 1) and SIZE_SELECT = '0') or (ROW_COUNTER < (V_SIZE_2 - 1) and SIZE_SELECT = '1') then
                         ROW_COUNTER <= ROW_COUNTER + 1;
                     end if;
-                    if ROW_COUNTER >= DISPLAY_AREA_TOP and ROW_COUNTER < DISPLAY_AREA_BOTTOM then
+                    if ((ROW_COUNTER >= DISPLAY_AREA_1_TOP and ROW_COUNTER < DISPLAY_AREA_1_BOTTOM and SIZE_SELECT = '0') or (ROW_COUNTER >= DISPLAY_AREA_2_TOP and ROW_COUNTER < DISPLAY_AREA_2_BOTTOM and SIZE_SELECT = '1')) then
                         if V_PIXEL_STRETCH_COUNTER = V_PIXEL_STRETCH - 1 then
                             V_PIXEL_STRETCH_COUNTER <= 0;
                             NEXT_V_PIXEL <= '1';
@@ -171,7 +187,7 @@ ACTIVE_AREA_CONTROLLER: process(CLK, RESET)
                         end if;
                     end if;
                 else
-                    if PIXEL_COUNTER < H_SIZE - 1 then
+                    if (PIXEL_COUNTER < (H_SIZE_1 - 1) and SIZE_SELECT = '0') or (PIXEL_COUNTER < (H_SIZE_2 - 1) and SIZE_SELECT = '1') then
                         PIXEL_COUNTER <= PIXEL_COUNTER + 1;
                     end if;
                     if IN_DISPLAY_AREA = '1' then
@@ -181,7 +197,7 @@ ACTIVE_AREA_CONTROLLER: process(CLK, RESET)
                             H_PIXEL_STRETCH_COUNTER <= H_PIXEL_STRETCH_COUNTER + 1;
                         end if;
                     end if;
-                    if ROW_COUNTER >= DISPLAY_AREA_TOP and ROW_COUNTER < DISPLAY_AREA_BOTTOM and PIXEL_COUNTER = DISPLAY_AREA_RIGHT then
+                    if ((ROW_COUNTER >= DISPLAY_AREA_1_TOP and ROW_COUNTER < DISPLAY_AREA_1_BOTTOM and PIXEL_COUNTER = DISPLAY_AREA_1_RIGHT and SIZE_SELECT = '0') or (ROW_COUNTER >= DISPLAY_AREA_2_TOP and ROW_COUNTER < DISPLAY_AREA_2_BOTTOM and PIXEL_COUNTER = DISPLAY_AREA_2_RIGHT and SIZE_SELECT = '1')) then
                         END_OF_ROW <= '1';
                     else
                         END_OF_ROW <= '0';
@@ -191,7 +207,7 @@ ACTIVE_AREA_CONTROLLER: process(CLK, RESET)
         end if;
     end process;
     
-    IN_DISPLAY_AREA <= '1' when ROW_COUNTER >= DISPLAY_AREA_TOP and ROW_COUNTER < DISPLAY_AREA_BOTTOM and PIXEL_COUNTER >= DISPLAY_AREA_LEFT and PIXEL_COUNTER < DISPLAY_AREA_RIGHT else '0';
+    IN_DISPLAY_AREA <= '1' when (ROW_COUNTER >= DISPLAY_AREA_1_TOP and ROW_COUNTER < DISPLAY_AREA_1_BOTTOM and PIXEL_COUNTER >= DISPLAY_AREA_1_LEFT and PIXEL_COUNTER < DISPLAY_AREA_1_RIGHT and SIZE_SELECT = '0') or (ROW_COUNTER >= DISPLAY_AREA_2_TOP and ROW_COUNTER < DISPLAY_AREA_2_BOTTOM and PIXEL_COUNTER >= DISPLAY_AREA_2_LEFT and PIXEL_COUNTER < DISPLAY_AREA_2_RIGHT and SIZE_SELECT = '1') else '0';
     NEXT_H_PIXEL <= '1' when IN_DISPLAY_AREA = '1' and H_PIXEL_STRETCH_COUNTER = 0 else '0';
     
     

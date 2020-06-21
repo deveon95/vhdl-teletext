@@ -4,18 +4,27 @@ use ieee.numeric_std.all;
 
 entity HDMI is
     generic (
-    H_SIZE          : integer;
-    H_FRONT_PORCH   : integer;
-    H_SYNC_PULSE    : integer;
-    H_BACK_PORCH    : integer;
-    V_SIZE          : integer;
-    V_FRONT_PORCH   : integer;
-    V_SYNC_PULSE    : integer;
-    V_BACK_PORCH    : integer);
+    H_SIZE_1        : integer;
+    H_FRONT_PORCH_1 : integer;
+    H_SYNC_PULSE_1  : integer;
+    H_BACK_PORCH_1  : integer;
+    V_SIZE_1        : integer;
+    V_FRONT_PORCH_1 : integer;
+    V_SYNC_PULSE_1  : integer;
+    V_BACK_PORCH_1  : integer;
+    H_SIZE_2        : integer;
+    H_FRONT_PORCH_2 : integer;
+    H_SYNC_PULSE_2  : integer;
+    H_BACK_PORCH_2  : integer;
+    V_SIZE_2        : integer;
+    V_FRONT_PORCH_2 : integer;
+    V_SYNC_PULSE_2  : integer;
+    V_BACK_PORCH_2  : integer);
     port (
     CLK_PIXEL       : in  std_logic;        -- Pixel clock
     CLK_BIT         : in  std_logic;        -- 10x pixel clock from PLL
     RESET           : in  std_logic;
+    RESOLUTION_SELECT_IN : in std_logic;
     R_IN            : in std_logic_vector(7 downto 0);
     G_IN            : in std_logic_vector(7 downto 0);
     B_IN            : in std_logic_vector(7 downto 0);
@@ -29,18 +38,18 @@ end entity HDMI;
 
 architecture RTL of HDMI is
 
-constant H_COUNT_MAX : integer := H_SIZE + H_FRONT_PORCH + H_SYNC_PULSE + H_BACK_PORCH - 1;
-signal H_COUNT : integer range 0 to H_COUNT_MAX;
+constant H_COUNT_MAX_1 : integer := H_SIZE_1 + H_FRONT_PORCH_1 + H_SYNC_PULSE_1 + H_BACK_PORCH_1 - 1;
+constant H_COUNT_MAX_2 : integer := H_SIZE_2 + H_FRONT_PORCH_2 + H_SYNC_PULSE_2 + H_BACK_PORCH_2 - 1;
+signal H_COUNT : integer range 0 to H_COUNT_MAX_2;
 signal H_ACTIVE : std_logic;
-constant V_COUNT_MAX : integer := V_SIZE + V_FRONT_PORCH + V_SYNC_PULSE + V_BACK_PORCH - 1;
-signal V_COUNT : integer range 0 to V_COUNT_MAX;
+constant V_COUNT_MAX_1 : integer := V_SIZE_1 + V_FRONT_PORCH_1 + V_SYNC_PULSE_1 + V_BACK_PORCH_1 - 1;
+constant V_COUNT_MAX_2 : integer := V_SIZE_2 + V_FRONT_PORCH_2 + V_SYNC_PULSE_2 + V_BACK_PORCH_2 - 1;
+signal V_COUNT : integer range 0 to V_COUNT_MAX_2;
 signal V_ACTIVE : std_logic;
 signal HSYNC : std_logic;
 signal VSYNC : std_logic;
 signal VIDEO_ACTIVE : std_logic;
-
-constant TEXT_BORDER_SIZE : integer := (V_SIZE * 10) / 9;
-signal VIDEO_BORDER : std_logic;
+signal RESOLUTION_SELECT : std_logic;
 
 signal R_RAW : std_logic_vector(7 downto 0);
 signal G_RAW : std_logic_vector(7 downto 0);
@@ -66,9 +75,6 @@ end component;
 
 begin
 
--- Draw border around the area which should be adjusted to 4:3 size on the monitor for proper text aspect ratio
-VIDEO_BORDER <= '1' when H_COUNT = (H_SIZE - TEXT_BORDER_SIZE) / 2 or H_COUNT = (H_SIZE + TEXT_BORDER_SIZE) / 2 or
-                        ((V_COUNT = 0 or V_COUNT = V_SIZE - 1) and H_COUNT > (H_SIZE - TEXT_BORDER_SIZE) / 2 and H_COUNT < (H_SIZE + TEXT_BORDER_SIZE) / 2) else '0';
 VIDEO_ACTIVE <= H_ACTIVE and V_ACTIVE;
 
 
@@ -80,17 +86,17 @@ COUNTER: process (CLK_PIXEL, RESET)
             H_COUNT <= 0;
             V_COUNT <= 0;
         elsif rising_edge(CLK_PIXEL) then
-            if H_COUNT = H_COUNT_MAX - 1 then
+            if (H_COUNT = H_COUNT_MAX_1 - 1 and RESOLUTION_SELECT = '0') or (H_COUNT = H_COUNT_MAX_2 - 1 and RESOLUTION_SELECT = '1') then
                 -- New Row Out goes high for one clock cycle
                 NEW_ROW_OUT <= '1';
                 H_COUNT <= H_COUNT + 1;
-            elsif H_COUNT = H_COUNT_MAX then
+            elsif (H_COUNT = H_COUNT_MAX_1 and RESOLUTION_SELECT = '0') or (H_COUNT = H_COUNT_MAX_2 and RESOLUTION_SELECT = '1') then
                 H_COUNT <= 0;
-                if V_COUNT = V_COUNT_MAX - 1 then
+                if (V_COUNT = V_COUNT_MAX_1 - 1 and RESOLUTION_SELECT = '0') or (V_COUNT = V_COUNT_MAX_2 - 1 and RESOLUTION_SELECT = '1') then
                     -- New Screen Out goes high for one line
                     NEW_SCREEN_OUT <= '1';
                     V_COUNT <= V_COUNT + 1;
-                elsif V_COUNT = V_COUNT_MAX then
+                elsif (V_COUNT = V_COUNT_MAX_1 and RESOLUTION_SELECT = '0') or (V_COUNT = V_COUNT_MAX_2 and RESOLUTION_SELECT = '1') then
                     V_COUNT <= 0;
                     NEW_SCREEN_OUT <= '0';
                 else
@@ -110,33 +116,66 @@ SYNC_GENERATOR: process (CLK_PIXEL, RESET)
             HSYNC <= '0';
             V_ACTIVE <= '0';
             VSYNC <= '0';
+            RESOLUTION_SELECT <= '0';
         elsif rising_edge(CLK_PIXEL) then
-            if H_COUNT < H_SIZE then
-                H_ACTIVE <= '1';
-                HSYNC <= '0';
-            elsif H_COUNT < H_SIZE + H_FRONT_PORCH then
-                H_ACTIVE <= '0';
-                HSYNC <= '0';
-            elsif H_COUNT < H_SIZE + H_FRONT_PORCH + H_SYNC_PULSE then
-                H_ACTIVE <= '0';
-                HSYNC <= '1';
-            else
-                H_ACTIVE <= '0';
-                HSYNC <= '0';
-            end if;
+            RESOLUTION_SELECT <= RESOLUTION_SELECT_IN;
             
-            if V_COUNT < V_SIZE then
-                V_ACTIVE <= '1';
-                VSYNC <= '0';
-            elsif V_COUNT < V_SIZE + V_FRONT_PORCH then
-                V_ACTIVE <= '0';
-                VSYNC <= '0';
-            elsif V_COUNT < V_SIZE + V_FRONT_PORCH + V_SYNC_PULSE then
-                V_ACTIVE <= '0';
-                VSYNC <= '1';
+            if RESOLUTION_SELECT = '0' then
+                if H_COUNT < H_SIZE_1 then
+                    H_ACTIVE <= '1';
+                    HSYNC <= '0';
+                elsif H_COUNT < H_SIZE_1 + H_FRONT_PORCH_1 then
+                    H_ACTIVE <= '0';
+                    HSYNC <= '0';
+                elsif H_COUNT < H_SIZE_1 + H_FRONT_PORCH_1 + H_SYNC_PULSE_1 then
+                    H_ACTIVE <= '0';
+                    HSYNC <= '1';
+                else
+                    H_ACTIVE <= '0';
+                    HSYNC <= '0';
+                end if;
+                
+                if V_COUNT < V_SIZE_1 then
+                    V_ACTIVE <= '1';
+                    VSYNC <= '0';
+                elsif V_COUNT < V_SIZE_1 + V_FRONT_PORCH_1 then
+                    V_ACTIVE <= '0';
+                    VSYNC <= '0';
+                elsif V_COUNT < V_SIZE_1 + V_FRONT_PORCH_1 + V_SYNC_PULSE_1 then
+                    V_ACTIVE <= '0';
+                    VSYNC <= '1';
+                else
+                    V_ACTIVE <= '0';
+                    VSYNC <= '0';
+                end if;
             else
-                V_ACTIVE <= '0';
-                VSYNC <= '0';
+                if H_COUNT < H_SIZE_2 then
+                    H_ACTIVE <= '1';
+                    HSYNC <= '0';
+                elsif H_COUNT < H_SIZE_2 + H_FRONT_PORCH_2 then
+                    H_ACTIVE <= '0';
+                    HSYNC <= '0';
+                elsif H_COUNT < H_SIZE_2 + H_FRONT_PORCH_2 + H_SYNC_PULSE_2 then
+                    H_ACTIVE <= '0';
+                    HSYNC <= '1';
+                else
+                    H_ACTIVE <= '0';
+                    HSYNC <= '0';
+                end if;
+                
+                if V_COUNT < V_SIZE_2 then
+                    V_ACTIVE <= '1';
+                    VSYNC <= '0';
+                elsif V_COUNT < V_SIZE_2 + V_FRONT_PORCH_2 then
+                    V_ACTIVE <= '0';
+                    VSYNC <= '0';
+                elsif V_COUNT < V_SIZE_2 + V_FRONT_PORCH_2 + V_SYNC_PULSE_2 then
+                    V_ACTIVE <= '0';
+                    VSYNC <= '1';
+                else
+                    V_ACTIVE <= '0';
+                    VSYNC <= '0';
+                end if;
             end if;
         end if;
     end process;
@@ -144,9 +183,9 @@ SYNC_GENERATOR: process (CLK_PIXEL, RESET)
 INPUT_REG: process (CLK_PIXEL)
     begin
         if rising_edge(CLK_PIXEL) then
-            R_RAW <= R_IN;-- or VIDEO_BORDER;
-            G_RAW <= G_IN;-- or VIDEO_BORDER;
-            B_RAW <= B_IN;-- or VIDEO_BORDER;
+            R_RAW <= R_IN;
+            G_RAW <= G_IN;
+            B_RAW <= B_IN;
         end if;
     end process;
     

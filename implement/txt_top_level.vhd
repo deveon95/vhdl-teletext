@@ -62,14 +62,23 @@ end entity TXT_TOP_LEVEL;
 architecture rtl of TXT_TOP_LEVEL is
 
 -- Parameters for 720x576 resolution
-constant H_SIZE : integer := 720;
-constant H_FRONT_PORCH : integer := 16;
-constant H_SYNC_PULSE : integer := 80;
-constant H_BACK_PORCH : integer := 48;
-constant V_SIZE : integer := 576;
-constant V_FRONT_PORCH : integer := 10;
-constant V_SYNC_PULSE : integer := 2;
-constant V_BACK_PORCH : integer := 37;
+constant H_SIZE_1 : integer := 720;
+constant H_FRONT_PORCH_1 : integer := 16;
+constant H_SYNC_PULSE_1 : integer := 64;
+constant H_BACK_PORCH_1 : integer := 64;
+constant V_SIZE_1 : integer := 576;
+constant V_FRONT_PORCH_1 : integer := 10;
+constant V_SYNC_PULSE_1 : integer := 2;
+constant V_BACK_PORCH_1 : integer := 37;
+-- Parameters for 800x600 resolution
+constant H_SIZE_2 : integer := 800;
+constant H_FRONT_PORCH_2 : integer := 40;
+constant H_SYNC_PULSE_2 : integer := 128;
+constant H_BACK_PORCH_2 : integer := 88;
+constant V_SIZE_2 : integer := 600;
+constant V_FRONT_PORCH_2 : integer := 1;
+constant V_SYNC_PULSE_2 : integer := 4;
+constant V_BACK_PORCH_2 : integer := 23;
 
 -- constant H_SIZE : integer := 720;
 -- constant H_FRONT_PORCH : integer := 16;
@@ -506,6 +515,11 @@ DUAL_PORT_RAM: entity work.DPR_IP_VARIATION
     q => DPR_READ_DATA);
 
 DISPLAY_GENERATOR: entity work.DISPLAY_GENERATOR
+    generic map(
+    H_SIZE_1 => H_SIZE_1,
+    V_SIZE_1 => V_SIZE_1,
+    H_SIZE_2 => H_SIZE_2,
+    V_SIZE_2 => V_SIZE_2)
     port map(
     RESET => RESET,
     CLK => CLK_VIDEO,
@@ -516,6 +530,7 @@ DISPLAY_GENERATOR: entity work.DISPLAY_GENERATOR
     MIX_IN => MIX_ENABLE,
     REVEAL_IN => REVEAL_ENABLE,
     AB_EN_IN => AB_ENABLE,
+    SIZE_SELECT_IN => RESOLUTION_SELECT,
     
     NEW_ROW_IN => NEW_ROW,
     NEW_SCREEN_IN => NEW_SCREEN,
@@ -532,18 +547,27 @@ PLL_HDMI: pll
 
 HDMI: entity work.HDMI
     generic map(
-    H_SIZE => H_SIZE,
-    H_FRONT_PORCH => H_FRONT_PORCH,
-    H_SYNC_PULSE => H_SYNC_PULSE,
-    H_BACK_PORCH => H_BACK_PORCH,
-    V_SIZE => V_SIZE,
-    V_FRONT_PORCH => V_FRONT_PORCH,
-    V_SYNC_PULSE => V_SYNC_PULSE,
-    V_BACK_PORCH => V_BACK_PORCH)
+    H_SIZE_1 => H_SIZE_1,
+    H_FRONT_PORCH_1 => H_FRONT_PORCH_1,
+    H_SYNC_PULSE_1 => H_SYNC_PULSE_1,
+    H_BACK_PORCH_1 => H_BACK_PORCH_1,
+    V_SIZE_1 => V_SIZE_1,
+    V_FRONT_PORCH_1 => V_FRONT_PORCH_1,
+    V_SYNC_PULSE_1 => V_SYNC_PULSE_1,
+    V_BACK_PORCH_1 => V_BACK_PORCH_1,
+    H_SIZE_2 => H_SIZE_2,
+    H_FRONT_PORCH_2 => H_FRONT_PORCH_2,
+    H_SYNC_PULSE_2 => H_SYNC_PULSE_2,
+    H_BACK_PORCH_2 => H_BACK_PORCH_2,
+    V_SIZE_2 => V_SIZE_2,
+    V_FRONT_PORCH_2 => V_FRONT_PORCH_2,
+    V_SYNC_PULSE_2 => V_SYNC_PULSE_2,
+    V_BACK_PORCH_2 => V_BACK_PORCH_2)
     port map(
     RESET => RESET,
     CLK_PIXEL => CLK_VIDEO_PIXEL,
     CLK_BIT => CLK_VIDEO_BIT,
+    RESOLUTION_SELECT_IN => RESOLUTION_SELECT,
     R_IN => R & R & R & R & R & R & R & R,
     G_IN => G & G & G & G & G & G & G & G,
     B_IN => B & B & B & B & B & B & B & B,
@@ -573,20 +597,6 @@ BUF_CLK: obuf_iobuf_out_tvs
     port map(
     datain => TMDS_CLK_UNBUF,
     dataout => TMDS_CLK);
-    
--- HDMI_FPGA4FUN: HDMI
-    -- port map(
-    -- inclk => CLK_VIDEO,
-    -- R_IN => R,
-    -- G_IN => G,
-    -- B_IN => B,
-    -- NEW_ROW_OUT => NEW_ROW,
-    -- NEW_SCREEN_OUT => NEW_SCREEN,
-    -- TMDS2 => TMDS_D2,
-    -- TMDS1 => TMDS_D1,
-    -- TMDS0 => TMDS_D0,
-    -- TMDS_clock => TMDS_CLK
-    -- );
     
 INTERNAL_OSCILLATOR: entity work.intosc
     port map(
