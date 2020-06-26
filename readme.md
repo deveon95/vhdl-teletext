@@ -7,6 +7,7 @@ A teletext decoder and display generator in VHDL for FPGAs.
 * Multiple screen resolutions supported
 * Small logic size
 * Vunit for unit tests (testbenches only completed for some modules so far)
+* HDMI output (originally VGA)
 
 # RTL block diagram
 
@@ -14,12 +15,8 @@ A teletext decoder and display generator in VHDL for FPGAs.
 
 # Implementation
 
-The design has been tested on the Cyclone 10 LP Evaluation Kit. The only active external component required is a high-speed comparator for data acquisition.
+The design runs on the FPGA Teletext board. The PCB includes all the hardware needed to control the teletext decoder and transmit the graphics to the display: FPGA, power supply, programmable oscillator, high-speed comparator, LVDS to TMDS level shifter, keypad, and DIP switches.
 
-![Hardware setup photo](docs/images/hardware-setup-photo.jpg)
+![FPGA Teletext PCB](docs/images/fpga-pcb.jpg)
 
-![Monitor connections](docs/images/monitor-connection.png)
-
-Two oscillators are required, one at 27.750 MHz for teletext decoding and one at whatever frequency is required for the VGA resolution in use (the same 27.750 MHz oscillator is acceptable when using 720x576). The programmable oscillator can be programmed to provide these on the Cyclone 10 LP Evaluation Kit but note that the settings need to be re-entered upon every power cycle.
-
-![Cyclone 10 LP Clock Controller configuration](docs/images/cyclone-10-clock-controller.png)
+Two oscillators are required for the design: one at 27.750 MHz for teletext decoding and one at whatever frequency is required for the HDMI resolution selected using the DIP switches. The FPGA internal oscillator is used to clock the programmable oscillator controller, required because the programmable oscillator does not generate useful clock frequencies until programmed.
