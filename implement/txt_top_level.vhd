@@ -1,6 +1,3 @@
--- ********** Use Clock Controller to set CLK1 to 27750 and CLK2 to 31000 for 60Hz on C10 Dev Board **
--- ********** Use Clock Controller to set CLK2 to 27750 and CLK2 to 26500 for 50Hz
-
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -383,26 +380,31 @@ PAGE_NUMBER_CONTROLLER: process(CLK_27_750, RESET)
                 if RED_BUTTON = '1' and RED_PAGE(7 downto 0) /= "11111111" then
                     DIGIT_INDEX <= 0;
                     PAGE_NUMBER <= RED_PAGE;
+                    SUBPAGE_ENABLE <= '0';
                 end if;
                 
                 if GRN_BUTTON = '1' and GRN_PAGE(7 downto 0) /= "11111111" then
                     DIGIT_INDEX <= 0;
                     PAGE_NUMBER <= GRN_PAGE;
+                    SUBPAGE_ENABLE <= '0';
                 end if;
                 
                 if YEL_BUTTON = '1' and YEL_PAGE(7 downto 0) /= "11111111" then
                     DIGIT_INDEX <= 0;
                     PAGE_NUMBER <= YEL_PAGE;
+                    SUBPAGE_ENABLE <= '0';
                 end if;
                 
                 if BLU_BUTTON = '1' and BLU_PAGE(7 downto 0) /= "11111111" then
                     DIGIT_INDEX <= 0;
                     PAGE_NUMBER <= BLU_PAGE;
+                    SUBPAGE_ENABLE <= '0';
                 end if;
                 
                 if IDX_BUTTON = '1' and IDX_PAGE(7 downto 0) /= "11111111" then
                     DIGIT_INDEX <= 0;
                     PAGE_NUMBER <= IDX_PAGE;
+                    SUBPAGE_ENABLE <= '0';
                 end if;
                 
                 KEY_ACTIVE_LAST <= KEY_ACTIVE;
