@@ -170,12 +170,23 @@ signal REVEAL_LAST  : std_logic;
 signal DIGIT_INDEX : integer range 0 to 3;
 signal KEY_ACTIVE_LAST : std_logic;
 
+-- Subpage number of currently loaded page
 signal LAST_SUBCODE : std_logic_vector(12 downto 0);
+-- Editorial links for currently loaded page
 signal RED_PAGE     : std_logic_vector(10 downto 0);
 signal GRN_PAGE     : std_logic_vector(10 downto 0);
 signal YEL_PAGE     : std_logic_vector(10 downto 0);
 signal BLU_PAGE     : std_logic_vector(10 downto 0);
 signal IDX_PAGE     : std_logic_vector(10 downto 0);
+-- Page number display characters
+signal STATUS_1     : std_logic_vector(6 downto 0);
+signal STATUS_2     : std_logic_vector(6 downto 0);
+signal STATUS_3     : std_logic_vector(6 downto 0);
+signal STATUS_4     : std_logic_vector(6 downto 0);
+-- Temporary digits used when keying in the page number
+signal TEMP_DIG_1   : std_logic_vector(1 downto 0);
+signal TEMP_DIG_2   : std_logic_vector(3 downto 0);
+signal TEMP_DIG_3   : std_logic_vector(3 downto 0);
 
 -- Dual Port RAM signals
 signal DPR_READ_DATA : std_logic_vector(6 downto 0);
@@ -197,12 +208,28 @@ signal TMDS_CLK_UNBUF : std_logic;
 signal CLK_VIDEO_PIXEL : std_logic;
 signal CLK_VIDEO_BIT : std_logic;
 
--- Full component instantiation of Verilog module required due to Quartus bug
---component HDMI
---port (inclk, R_IN, G_IN, B_IN : in std_logic;
---      NEW_ROW_OUT, NEW_SCREEN_OUT, TMDS2, TMDS1, TMDS0, TMDS_clock : out std_logic);
---end component;
+-- HEX_TO_ASCII: converts a 4-bit binary number into a 7-bit character for display
+function HEX_TO_ASCII(HEX_IN : std_logic_vector)
+        return std_logic_vector is
+begin
+    if HEX_IN = "1010" then
+        return "1000001";
+    elsif HEX_IN = "1011" then
+        return "1000010";
+    elsif HEX_IN = "1100" then
+        return "1000011";
+    elsif HEX_IN = "1101" then
+        return "1000100";
+    elsif HEX_IN = "1110" then
+        return "1000101";
+    elsif HEX_IN = "1111" then
+        return "1000110";
+    else
+        return "011" & HEX_IN;
+    end if;
+end HEX_TO_ASCII;
 
+-- Full component instantiation of Verilog module required due to Quartus bug
 component obuf_iobuf_out_tvs
 port (datain : in std_logic;
       dataout : out std_logic);
@@ -231,6 +258,9 @@ PAGE_NUMBER_CONTROLLER: process(CLK_27_750, RESET)
             REVEAL_LAST <= '0';
             DIGIT_INDEX <= 0;
             KEY_ACTIVE_LAST <= '0';
+            TEMP_DIG_1 <= (others => '0');
+            TEMP_DIG_2 <= (others => '0');
+            TEMP_DIG_3 <= (others => '0');
         elsif rising_edge(CLK_27_750) then
             if KEYPAD_FIRST_PASS = '1' then
                 if KEYPAD_FIRST_PASS_LAST = '0' then
@@ -242,27 +272,32 @@ PAGE_NUMBER_CONTROLLER: process(CLK_27_750, RESET)
                         if SUBPAGE_ENABLE = '1' then
                             -- For subcode page
                             if DIGIT_INDEX = 0 and KEY_VALUE(3 downto 2) = "00" then
-                                SUBPAGE_NUMBER(12 downto 11) <= KEY_VALUE(1 downto 0);
+                                TEMP_DIG_1 <= KEY_VALUE(1 downto 0);
                                 DIGIT_INDEX <= 1;
                             elsif DIGIT_INDEX = 1 then
-                                SUBPAGE_NUMBER(10 downto 7) <= KEY_VALUE;
+                                TEMP_DIG_2 <= KEY_VALUE;
                                 DIGIT_INDEX <= 2;
                             elsif DIGIT_INDEX = 2 and KEY_VALUE(3) = '0' then
-                                SUBPAGE_NUMBER(6 downto 4) <= KEY_VALUE(2 downto 0);
+                                TEMP_DIG_3 <= '0' & KEY_VALUE(2 downto 0);
                                 DIGIT_INDEX <= 3;
                             elsif DIGIT_INDEX = 3 then
+                                SUBPAGE_NUMBER(12 downto 11) <= TEMP_DIG_1;
+                                SUBPAGE_NUMBER(10 downto 7) <= TEMP_DIG_2;
+                                SUBPAGE_NUMBER(6 downto 4) <= TEMP_DIG_3(2 downto 0);
                                 SUBPAGE_NUMBER(3 downto 0) <= KEY_VALUE;
                                 DIGIT_INDEX <= 0;
                             end if;
                         else
                             -- For page number
-                            if DIGIT_INDEX = 0 then
-                                PAGE_NUMBER(10 downto 8) <= KEY_VALUE(2 downto 0);
-                                DIGIT_INDEX <= 1;
-                            elsif DIGIT_INDEX = 1 then
-                                PAGE_NUMBER(7 downto 4) <= KEY_VALUE;
+                            if DIGIT_INDEX = 0 and KEY_VALUE /= "1001" and KEY_VALUE /= "0000" then
+                                TEMP_DIG_2 <= '0' & KEY_VALUE(2 downto 0);
                                 DIGIT_INDEX <= 2;
-                            else
+                            elsif DIGIT_INDEX = 2 then
+                                TEMP_DIG_3 <= KEY_VALUE;
+                                DIGIT_INDEX <= 3;
+                            elsif DIGIT_INDEX = 3 then
+                                PAGE_NUMBER(10 downto 8) <= TEMP_DIG_2(2 downto 0);
+                                PAGE_NUMBER(7 downto 4) <= TEMP_DIG_3;
                                 PAGE_NUMBER(3 downto 0) <= KEY_VALUE;
                                 DIGIT_INDEX <= 0;
                             end if;
@@ -374,6 +409,26 @@ PAGE_NUMBER_CONTROLLER: process(CLK_27_750, RESET)
             end if;
         end if;
     end process;
+    
+-- Status display assignments (for the characters in the top left corner of the display)
+    STATUS_1 <= "01100" & TEMP_DIG_1                        when SUBPAGE_ENABLE = '1' and DIGIT_INDEX > 0 else
+                "01100" & SUBPAGE_NUMBER(12 downto 11)      when SUBPAGE_ENABLE = '1' else
+                "1010000";
+    
+    STATUS_2 <= HEX_TO_ASCII(TEMP_DIG_2)                    when DIGIT_INDEX > 1 and SUBPAGE_ENABLE = '1' else
+                HEX_TO_ASCII(NOT (TEMP_DIG_2(2) OR TEMP_DIG_2(1) OR TEMP_DIG_2(0)) & TEMP_DIG_2(2 downto 0)) when DIGIT_INDEX > 1 and SUBPAGE_ENABLE = '0' else
+                "0101101"                                   when DIGIT_INDEX = 1 else
+                HEX_TO_ASCII(SUBPAGE_NUMBER(10 downto 7))   when SUBPAGE_ENABLE = '1' else
+                HEX_TO_ASCII(NOT (PAGE_NUMBER(10) OR PAGE_NUMBER(9) OR PAGE_NUMBER(8)) & PAGE_NUMBER(10 downto 8));
+    
+    STATUS_3 <= HEX_TO_ASCII(TEMP_DIG_3)                    when DIGIT_INDEX > 2 else
+                "0101101"                                   when DIGIT_INDEX <= 2 and DIGIT_INDEX > 0 else
+                "0110" & SUBPAGE_NUMBER(6 downto 4)         when SUBPAGE_ENABLE = '1' else
+                HEX_TO_ASCII(PAGE_NUMBER(7 downto 4));
+    
+    STATUS_4 <= "0101101"                                   when DIGIT_INDEX > 0 else
+                HEX_TO_ASCII(SUBPAGE_NUMBER(3 downto 0))    when SUBPAGE_ENABLE = '1' else
+                HEX_TO_ASCII(PAGE_NUMBER(3 downto 0));
 
 DATA_RECOVERY: entity work.TXT_DATA_RECOVERY
     port map(
@@ -501,7 +556,12 @@ MEMORY_CONTROLLER: entity work.TXT_MEMORY_CONTROLLER
     GRN_PAGE_OUT => GRN_PAGE,
     YEL_PAGE_OUT => YEL_PAGE,
     BLU_PAGE_OUT => BLU_PAGE,
-    IDX_PAGE_OUT => IDX_PAGE
+    IDX_PAGE_OUT => IDX_PAGE,
+    
+    STATUS_IN_1 => STATUS_1,
+    STATUS_IN_2 => STATUS_2,
+    STATUS_IN_3 => STATUS_3,
+    STATUS_IN_4 => STATUS_4
     );
 
 DUAL_PORT_RAM: entity work.DPR_IP_VARIATION

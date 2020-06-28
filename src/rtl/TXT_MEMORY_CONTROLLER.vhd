@@ -33,7 +33,12 @@ entity TXT_MEMORY_CONTROLLER is
     GRN_PAGE_OUT     : out std_logic_vector(10 downto 0);
     YEL_PAGE_OUT     : out std_logic_vector(10 downto 0);
     BLU_PAGE_OUT     : out std_logic_vector(10 downto 0);
-    IDX_PAGE_OUT     : out std_logic_vector(10 downto 0)
+    IDX_PAGE_OUT     : out std_logic_vector(10 downto 0);
+    
+    STATUS_IN_1      : in  std_logic_vector(6 downto 0);
+    STATUS_IN_2      : in  std_logic_vector(6 downto 0);
+    STATUS_IN_3      : in  std_logic_vector(6 downto 0);
+    STATUS_IN_4      : in  std_logic_vector(6 downto 0)
     );
     
 end entity TXT_MEMORY_CONTROLLER;
@@ -60,26 +65,6 @@ signal STATE : STATE_TYPE;
 type STATUS_ARRAY_TYPE is array (0 to 7) of std_logic_vector(6 downto 0);
 signal STATUS_ARRAY : STATUS_ARRAY_TYPE;
 signal STATUS_ARRAY_LAST : STATUS_ARRAY_TYPE;
-
-function HEX_TO_ASCII(HEX_IN : std_logic_vector)
-        return std_logic_vector is
-begin
-    if HEX_IN = "1010" then
-        return "1000001";
-    elsif HEX_IN = "1011" then
-        return "1000010";
-    elsif HEX_IN = "1100" then
-        return "1000011";
-    elsif HEX_IN = "1101" then
-        return "1000100";
-    elsif HEX_IN = "1110" then
-        return "1000101";
-    elsif HEX_IN = "1111" then
-        return "1000110";
-    else
-        return "011" & HEX_IN;
-    end if;
-end HEX_TO_ASCII;
 
 begin
 MAIN: process(CLK_27_750, RESET)
@@ -262,10 +247,10 @@ MAIN: process(CLK_27_750, RESET)
     MEM_ADDRESS_OUT <= std_logic_vector(to_unsigned(ADDRESS_COUNTER, 10));
     
     STATUS_ARRAY(0) <= "0000111";
-    STATUS_ARRAY(1) <= "01100" & REQ_SUBCODE_IN(12 downto 11) when REQ_SUBCODE_SPEC_IN = '1' else "1010000";
-    STATUS_ARRAY(2) <= HEX_TO_ASCII(REQ_SUBCODE_IN(10 downto 7)) when REQ_SUBCODE_SPEC_IN = '1' else HEX_TO_ASCII(NOT (REQ_MAGAZINE_IN(2) OR REQ_MAGAZINE_IN(1) OR REQ_MAGAZINE_IN(0)) & REQ_MAGAZINE_IN);
-    STATUS_ARRAY(3) <= "0110" & REQ_SUBCODE_IN(6 downto 4) when REQ_SUBCODE_SPEC_IN = '1' else HEX_TO_ASCII(REQ_PAGE_IN(7 downto 4));
-    STATUS_ARRAY(4) <= HEX_TO_ASCII(REQ_SUBCODE_IN(3 downto 0)) when REQ_SUBCODE_SPEC_IN = '1' else HEX_TO_ASCII(REQ_PAGE_IN(3 downto 0));
+    STATUS_ARRAY(1) <= STATUS_IN_1;
+    STATUS_ARRAY(2) <= STATUS_IN_2;
+    STATUS_ARRAY(3) <= STATUS_IN_3;
+    STATUS_ARRAY(4) <= STATUS_IN_4;
     STATUS_ARRAY(5) <= "0100000";
     STATUS_ARRAY(6) <= "0100000";
     STATUS_ARRAY(7) <= "0000010" when PAGE_FOUND = '0' else "0000111";
