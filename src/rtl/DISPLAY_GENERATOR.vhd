@@ -169,12 +169,12 @@ ACTIVE_AREA_CONTROLLER: process(CLK, RESET)
             END_OF_ROW <= '0';
             SIZE_SELECT <= '0';
         elsif rising_edge(CLK) then
-            SIZE_SELECT <= SIZE_SELECT_SYNCED;
             if NEW_SCREEN_IN = '1' then
                 ROW_COUNTER <= 0;
                 NEXT_V_PIXEL <= '0';
                 V_PIXEL_STRETCH_COUNTER <= 0;
                 H_PIXEL_STRETCH_COUNTER <= 0;
+                SIZE_SELECT <= SIZE_SELECT_SYNCED;
             else
                 if NEW_ROW_IN = '1' then
                     PIXEL_COUNTER <= 0;
@@ -268,11 +268,8 @@ DISPLAY_GEN: process(CLK, RESET)
             BG_G_D <= BG_G;
             BG_B_D <= BG_B;
             MIX_SYNCER <= MIX_IN;
-            MIX_SYNCED <= MIX_SYNCER;
             REVEAL_SYNCER <= REVEAL_IN;
-            REVEAL_SYNCED <= REVEAL_SYNCER;
             AB_EN_SYNCER <= AB_EN_IN;
-            AB_EN_SYNCED <= AB_EN_SYNCER;
             SIZE_SELECT_SYNCER <= SIZE_SELECT_IN;
             SIZE_SELECT_SYNCED <= SIZE_SELECT_SYNCER;
             
@@ -286,6 +283,9 @@ DISPLAY_GEN: process(CLK, RESET)
                 CHAR_COUNTER <= 0;
                 CHAR_COL_COUNTER <= 0;
                 CHAR_ROW_COUNTER <= 0;
+                MIX_SYNCED <= MIX_SYNCER;
+                REVEAL_SYNCED <= REVEAL_SYNCER;
+                AB_EN_SYNCED <= AB_EN_SYNCER;
             end if;
             
             if NEW_ROW_IN = '1' and NEXT_V_PIXEL = '1' then
@@ -444,6 +444,9 @@ DISPLAY_GEN: process(CLK, RESET)
                 BG_R <= '0';
                 BG_G <= '0';
                 BG_B <= '0';
+                BG_R_D <= '0';
+                BG_G_D <= '0';
+                BG_B_D <= '0';
                 MOSAIC_ENABLE <= '0';
                 NEXT_MOSAIC_ENABLE <= '0';
                 MOSAIC_HOLD <= '0';
