@@ -1,3 +1,10 @@
+-- TXT_TOP_LEVEL.vhd
+-- VHDL-Teletext top level entity for the RTL code
+-- This file links all of the modules together to create a teletext decoder.
+--
+-- Copyright 2020 Nick Schollar
+-- This code is subject to the licence in the LICENSE.TXT file in the project directory
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -17,31 +24,31 @@ entity TXT_TOP_LEVEL is
     KEYPAD_ROWS : inout std_logic_vector(5 downto 0);
     KEYPAD_COLS : in  std_logic_vector(5 downto 0);
     -- LED
-    LED_OUT : out std_logic;
+    LED_OUT    : out std_logic;
     -- HDMI interface
-    HDMI_SDA : inout std_logic;
-    HDMI_SCL : inout std_logic;
-    TMDS_CLK : out std_logic;
+    HDMI_SDA   : inout std_logic;
+    HDMI_SCL   : inout std_logic;
+    TMDS_CLK   : out std_logic;
     --TMDS_CLK_N : out std_logic;
-    TMDS_D0 : out std_logic;
+    TMDS_D0    : out std_logic;
     --TMDS_D0_N : out std_logic;
-    TMDS_D1 : out std_logic;
+    TMDS_D1    : out std_logic;
     --TMDS_D1_N : out std_logic;
-    TMDS_D2 : out std_logic;
+    TMDS_D2    : out std_logic;
     --TMDS_D2_N : out std_logic;
-    HDMI_HPD : in std_logic;
+    HDMI_HPD   : in std_logic;
     -- SRAM for future use (optional)
-    SRAM_ADDR : out std_logic_vector(18 downto 0);
-    SRAM_DATA : inout std_logic_vector(7 downto 0);
-    SRAM_OE_N : out std_logic;
-    SRAM_WE_N : out std_logic;
-    SRAM_CE_N : out std_logic;
+    SRAM_ADDR  : out std_logic_vector(18 downto 0);
+    SRAM_DATA  : inout std_logic_vector(7 downto 0);
+    SRAM_OE_N  : out std_logic;
+    SRAM_WE_N  : out std_logic;
+    SRAM_CE_N  : out std_logic;
     -- SAA7113 Video Processor (optional) - use same pins as oscillator for I2C
     VP_DATA_IN : in std_logic_vector(7 downto 0);
     VP_RTCO_IN : in std_logic;
     VP_RTS0_IN : in std_logic;
     VP_RTS1_IN : in std_logic;
-    VP_LLC_IN : in std_logic;
+    VP_LLC_IN  : in std_logic;
     -- VGA interface
     R_OUT      : out std_logic;
     G_OUT      : out std_logic;

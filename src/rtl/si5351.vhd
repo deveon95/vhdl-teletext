@@ -1,20 +1,25 @@
+-- SI5351.vhd
 -- A really simple controller for the SI5351
 -- Clocked by the MAX10 built-in oscillator
+--
+-- Copyright 2020 Nick Schollar
+-- This code is subject to the licence in the LICENSE.TXT file in the project directory
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 entity SI5351 is
     port (
-    RESET     : in  std_logic;
-    CLOCK     : in  std_logic;
-    SDA_OUT : out std_logic;
-    SCL_OUT : out std_logic;
-    SDA_IN : in std_logic;
-    SCL_IN : in std_logic;
-    REFRESH_RATE_SELECT_IN : in std_logic;
-    RESOLUTION_SELECT_IN : in std_logic;
-    COMPLETE_OUT : out std_logic
+    RESET                   : in  std_logic;
+    CLOCK                   : in  std_logic;
+    SDA_OUT                 : out std_logic;
+    SCL_OUT                 : out std_logic;
+    SDA_IN                  : in  std_logic;
+    SCL_IN                  : in  std_logic;
+    REFRESH_RATE_SELECT_IN  : in  std_logic;
+    RESOLUTION_SELECT_IN    : in  std_logic;
+    COMPLETE_OUT            : out std_logic
     );
 end entity SI5351;
 

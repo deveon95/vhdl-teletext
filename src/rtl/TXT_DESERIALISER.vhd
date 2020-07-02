@@ -1,3 +1,9 @@
+-- TXT_DESERIALISER.vhd
+-- Converts serial VBI data to parallel
+--
+-- Copyright 2020 Nick Schollar
+-- This code is subject to the licence in the LICENSE.TXT file in the project directory
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
