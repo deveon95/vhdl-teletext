@@ -92,11 +92,10 @@ ENCODE: process(CLK)
     begin
         if rising_edge(CLK) then
             if DISPARITY = 0 or TMDATA_1S = 4 then
+                ENCODED_DATA <= not TMDATA(8) & TMDATA(8) & TMDATA(7 downto 0) xor (7 downto 0 => not TMDATA(8));
                 if TMDATA(8) = '0' then
-                    ENCODED_DATA <= not TMDATA(8) & TMDATA(8) & not TMDATA(7 downto 0);
                     DISPARITY <= DISPARITY - BALANCE_1S;
                 else
-                    ENCODED_DATA <= not TMDATA(8) & TMDATA(8) & TMDATA(7 downto 0);
                     DISPARITY <= DISPARITY + BALANCE_1S;
                 end if;
             elsif (DISPARITY > 0 and TMDATA_1S > 4) or (DISPARITY < 0 and TMDATA_1S < 4) then
