@@ -71,14 +71,6 @@ signal LATCHED_R : std_logic_vector(9 downto 0);
 signal LATCHED_G : std_logic_vector(9 downto 0);
 signal LATCHED_B : std_logic_vector(9 downto 0);
 
-component TMDS_encoder
-port (clk : in std_logic;
-      VD : in std_logic_vector(7 downto 0);
-      CD : in std_logic_vector(1 downto 0);
-      VDE : in std_logic;
-      TMDS : out std_logic_vector(9 downto 0));
-end component;
-
 begin
 
 VIDEO_ACTIVE <= H_ACTIVE and V_ACTIVE;
@@ -197,29 +189,29 @@ INPUT_REG: process (CLK_PIXEL)
         end if;
     end process;
     
-ENCODER_R: TMDS_encoder
+ENCODER_R: entity work.TMDS_ENCODER
     port map(
-    clk => CLK_PIXEL,
-    VD => R_RAW,
-    CD => "00",
-    VDE => VIDEO_ACTIVE,
-    TMDS => ENCODED_R);
+    CLK => CLK_PIXEL,
+    VIDEO_IN => R_RAW,
+    CONTROL_IN => "00",
+    VIDEO_ACTIVE_IN => VIDEO_ACTIVE,
+    TMDS_OUT => ENCODED_R);
     
-ENCODER_G: TMDS_encoder
+ENCODER_G: entity work.TMDS_ENCODER
     port map(
     clk => CLK_PIXEL,
-    VD => G_RAW,
-    CD => "00",
-    VDE => VIDEO_ACTIVE,
-    TMDS => ENCODED_G);
+    VIDEO_IN => G_RAW,
+    CONTROL_IN => "00",
+    VIDEO_ACTIVE_IN => VIDEO_ACTIVE,
+    TMDS_OUT => ENCODED_G);
     
-ENCODER_B: TMDS_encoder
+ENCODER_B: entity work.TMDS_ENCODER
     port map(
     clk => CLK_PIXEL,
-    VD => B_RAW,
-    CD => VSYNC & HSYNC,
-    VDE => VIDEO_ACTIVE,
-    TMDS => ENCODED_B);
+    VIDEO_IN => B_RAW,
+    CONTROL_IN => VSYNC & HSYNC,
+    VIDEO_ACTIVE_IN => VIDEO_ACTIVE,
+    TMDS_OUT => ENCODED_B);
     
 ENCODED_REG: process (CLK_PIXEL)
     begin

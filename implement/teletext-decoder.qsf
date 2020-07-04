@@ -204,7 +204,7 @@ set_global_assignment -name VHDL_FILE ../src/rtl/TXT_MEMORY_CONTROLLER.vhd
 set_global_assignment -name VHDL_FILE ../src/rtl/CGROM.vhd
 set_global_assignment -name QIP_FILE ../src/rtl/dpr_ip_variation.qip
 set_global_assignment -name VHDL_FILE ../src/rtl/DISPLAY_GENERATOR.vhd
-set_global_assignment -name VERILOG_FILE ../src/rtl/TMDS_encoder.v
+set_global_assignment -name VHDL_FILE ../src/rtl/TMDS_ENCODER.vhd
 set_global_assignment -name VHDL_FILE ../src/rtl/HDMI.vhd
 set_global_assignment -name QIP_FILE ../src/rtl/obuf.qip
 set_global_assignment -name QIP_FILE ../src/rtl/pll.qip
