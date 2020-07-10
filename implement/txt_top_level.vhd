@@ -21,8 +21,8 @@ entity TXT_TOP_LEVEL is
     -- data in
     RX_IN      : in  std_logic;
     -- keypad and DIP switches
-    KEYPAD_ROWS : inout std_logic_vector(5 downto 0);
-    KEYPAD_COLS : in  std_logic_vector(5 downto 0);
+    KEYPAD_ROWS : inout std_logic_vector(8 downto 0);
+    KEYPAD_COLS : in  std_logic_vector(3 downto 0);
     -- LED
     LED_OUT    : out std_logic;
     -- HDMI interface
@@ -106,7 +106,8 @@ constant V_BACK_PORCH_2 : integer := 23;
 constant BUTTON_DELAY_COUNTER_MAX : integer := 2775000;
 
 -- '1' for keypad buttons except Page Up and Page Down, '0' for DIP switches
-constant MOMENTARY_MASK : std_logic_vector(35 downto 0) := "001111001111001111001010001111000000";
+constant MOMENTARY_MASK : std_logic_vector(35 downto 0) := 
+"111111111111101011110000000000000000";
 -- END OF CONSTANTS
     
 signal PAGE_NUMBER : std_logic_vector(10 downto 0);
@@ -160,7 +161,7 @@ signal KEY_8 : std_logic;
 signal KEY_9 : std_logic;
 signal KEY_ACTIVE : std_logic;
 signal KEY_VALUE : std_logic_vector(3 downto 0);
-signal KEYPAD_ROWS_INT : std_logic_vector(5 downto 0);
+signal KEYPAD_ROWS_INT : std_logic_vector(KEYPAD_ROWS'length-1 downto 0);
 
 signal MIX_ENABLE  : std_logic;
 signal SUBPAGE_ENABLE : std_logic;
@@ -306,7 +307,7 @@ PAGE_NUMBER_CONTROLLER: process(CLK_27_750, RESET)
                                 DIGIT_INDEX <= 0;
                             end if;
                         end if;
-                    elsif PAGE_UP_BUTTON = '1' then
+                    elsif PAGE_DOWN_BUTTON = '1' then
                         if BUTTON_DELAY_COUNTER = BUTTON_DELAY_COUNTER_MAX / 2 then
                             DIGIT_INDEX <= 0;
                             if SUBPAGE_ENABLE = '1' then
@@ -328,7 +329,7 @@ PAGE_NUMBER_CONTROLLER: process(CLK_27_750, RESET)
                         else
                             BUTTON_DELAY_COUNTER <= 0;
                         end if;
-                    elsif PAGE_DOWN_BUTTON = '1' then
+                    elsif PAGE_UP_BUTTON = '1' then
                         if BUTTON_DELAY_COUNTER = BUTTON_DELAY_COUNTER_MAX / 2 then
                             DIGIT_INDEX <= 0;
                             if SUBPAGE_ENABLE = '1' then
@@ -443,7 +444,7 @@ DATA_RECOVERY: entity work.TXT_DATA_RECOVERY
     port map(
     RESET => RESET,
     CLK_27_750 => CLK_27_750,
-    RX_IN => not RX_IN,
+    RX_IN => RX_IN,
     SERIAL_DATA_OUT => SERIAL_DATA,
     SERIAL_CLOCK_OUT => SERIAL_CLOCK,
     FRAME_VALID_OUT => SERIAL_FRAME_VALID);
@@ -481,8 +482,8 @@ DATA_PROCESSOR: entity work.TXT_DATA_PROCESSOR
     
 KEYPAD_CONTROLLER: entity work.KEYPAD
     generic map(
-    COLS => 6,
-    ROWS => 6,
+    COLS => KEYPAD_COLS'length,
+    ROWS => KEYPAD_ROWS'length,
     DELAY => 277500,    -- 10ms per row
     MOMENTARY_MASK => MOMENTARY_MASK
     )
@@ -496,22 +497,22 @@ KEYPAD_CONTROLLER: entity work.KEYPAD
     
     KEYPAD_ROWS <= KEYPAD_ROWS_INT;
     
-    PAGE_NUMBER_DIPSW <= KEYPAD_BUTTONS(28) & KEYPAD_BUTTONS(22) & KEYPAD_BUTTONS(16) &
-    KEYPAD_BUTTONS(10) & KEYPAD_BUTTONS(4) & KEYPAD_BUTTONS(35) &
-    KEYPAD_BUTTONS(29) & KEYPAD_BUTTONS(23) & KEYPAD_BUTTONS(17) &
-    KEYPAD_BUTTONS(11) & KEYPAD_BUTTONS(5);
-    PAGE_UP_BUTTON <= KEYPAD_BUTTONS(12);
-    PAGE_DOWN_BUTTON <= KEYPAD_BUTTONS(14);
-    KEY_0 <= KEYPAD_BUTTONS(13);
-    KEY_1 <= KEYPAD_BUTTONS(30);
-    KEY_2 <= KEYPAD_BUTTONS(31);
-    KEY_3 <= KEYPAD_BUTTONS(32);
-    KEY_4 <= KEYPAD_BUTTONS(24);
-    KEY_5 <= KEYPAD_BUTTONS(25);
-    KEY_6 <= KEYPAD_BUTTONS(26);
-    KEY_7 <= KEYPAD_BUTTONS(18);
-    KEY_8 <= KEYPAD_BUTTONS(19);
-    KEY_9 <= KEYPAD_BUTTONS(20);
+    PAGE_NUMBER_DIPSW <= KEYPAD_BUTTONS(9) & KEYPAD_BUTTONS(10) & KEYPAD_BUTTONS(11) &
+    KEYPAD_BUTTONS(4) & KEYPAD_BUTTONS(5) & KEYPAD_BUTTONS(6) &
+    KEYPAD_BUTTONS(7) & KEYPAD_BUTTONS(0) & KEYPAD_BUTTONS(1) &
+    KEYPAD_BUTTONS(2) & KEYPAD_BUTTONS(3);
+    PAGE_DOWN_BUTTON <= KEYPAD_BUTTONS(20);
+    PAGE_UP_BUTTON <= KEYPAD_BUTTONS(22);
+    KEY_0 <= KEYPAD_BUTTONS(21);
+    KEY_1 <= KEYPAD_BUTTONS(32);
+    KEY_2 <= KEYPAD_BUTTONS(33);
+    KEY_3 <= KEYPAD_BUTTONS(34);
+    KEY_4 <= KEYPAD_BUTTONS(28);
+    KEY_5 <= KEYPAD_BUTTONS(29);
+    KEY_6 <= KEYPAD_BUTTONS(30);
+    KEY_7 <= KEYPAD_BUTTONS(24);
+    KEY_8 <= KEYPAD_BUTTONS(25);
+    KEY_9 <= KEYPAD_BUTTONS(26);
     KEY_ACTIVE <= KEY_0 or KEY_1 or KEY_2 or KEY_3 or KEY_4 or KEY_5 or KEY_6 or KEY_7 or KEY_8 or KEY_9;
     KEY_VALUE <= "0000" when KEY_0 = '1' else
                  "0001" when KEY_1 = '1' else
@@ -523,17 +524,17 @@ KEYPAD_CONTROLLER: entity work.KEYPAD
                  "0111" when KEY_7 = '1' else
                  "1000" when KEY_8 = '1' else
                  "1001" when KEY_9 = '1' else "0000";
-    RED_BUTTON <= KEYPAD_BUTTONS(33);
-    GRN_BUTTON <= KEYPAD_BUTTONS(27);
-    YEL_BUTTON <= KEYPAD_BUTTONS(21);
-    BLU_BUTTON <= KEYPAD_BUTTONS(15);
-    IDX_BUTTON <= KEYPAD_BUTTONS(9);
-    MIX_BUTTON <= KEYPAD_BUTTONS(6);
-    SUBPAGE_BUTTON <= KEYPAD_BUTTONS(7);
-    REVEAL_BUTTON <= KEYPAD_BUTTONS(8);
-    AB_ENABLE <= KEYPAD_BUTTONS(34);
-    RESOLUTION_SELECT <= KEYPAD_BUTTONS(1);
-    REFRESH_RATE_SELECT <= KEYPAD_BUTTONS(2);
+    RED_BUTTON <= KEYPAD_BUTTONS(35);
+    GRN_BUTTON <= KEYPAD_BUTTONS(31);
+    YEL_BUTTON <= KEYPAD_BUTTONS(27);
+    BLU_BUTTON <= KEYPAD_BUTTONS(23);
+    IDX_BUTTON <= KEYPAD_BUTTONS(19);
+    MIX_BUTTON <= KEYPAD_BUTTONS(16);
+    SUBPAGE_BUTTON <= KEYPAD_BUTTONS(17);
+    REVEAL_BUTTON <= KEYPAD_BUTTONS(18);
+    AB_ENABLE <= KEYPAD_BUTTONS(8);
+    RESOLUTION_SELECT <= KEYPAD_BUTTONS(13);
+    REFRESH_RATE_SELECT <= KEYPAD_BUTTONS(14);
 
 MEMORY_CONTROLLER: entity work.TXT_MEMORY_CONTROLLER
     port map(

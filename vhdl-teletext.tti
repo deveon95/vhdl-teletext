@@ -1,0 +1,29 @@
+DE,Description goes here
+DS,inserter
+SP,Z:\Documents\Projects\Teletext-decoder\vhdl-teletext.tti
+PN,1ff00
+SC,0000
+PS,8000
+CT,8,T
+RE,0
+OL,0,XXXXXXXXTEEFAX mpp DAY dd MTH C hh:nn.ss
+OL,1,V7k j##k j#7##,07k l$p04p0x0p000x0      
+OL,2,Ve"46`0j j 5h,0*5j j =%5=%j =%91j       
+OL,3,Vj e%j5"## 5j j 5j " #!!#!"!#!!!"!      
+OL,4,V 5j 55j#k 5j : 5j   D(C) Nick Schollar 
+OL,5,V i h!5j j 5"# :5*,,4DSearch GitHub for 
+OL,6,V *,. -. *,-,,# -,,,%Dvhdl-teletext     
+OL,8, To begin, connect a teletext source to 
+OL,9, the Video In connector and slowly      
+OL,10, adjust the Signal Level Adjustment     
+OL,11, until the header row appears at the    
+OL,12, top. Adjustment is complete when pages 
+OL,13, load reliably without missing lines.   
+OL,15, Once the Signal Level Adjustment is    
+OL,16, set, it should not be necessary to     
+OL,17, change it again unless changing source.
+OL,19, Allow enough time for the Raspberry Pi 
+OL,20, to boot if you are using one. Ensure   
+OL,21, the current page number is part of a   
+OL,22, valid magazine.                        
+OL,24, A]    B]    C]    D]    E]    F]     \ 
