@@ -24,7 +24,9 @@ entity TXT_DATA_PROCESSOR is
     ROW_OUT         : out std_logic_vector(4 downto 0);
     PAGE_OUT        : out std_logic_vector(7 downto 0);
     SUBCODE_OUT     : out std_logic_vector(12 downto 0);
-    CONTROL_BITS_OUT: out std_logic_vector(10 downto 0)
+    CONTROL_BITS_OUT: out std_logic_vector(10 downto 0);
+    
+    STATUS_LED_OUT  : out std_logic
     );
     
 end entity TXT_DATA_PROCESSOR;
@@ -58,6 +60,9 @@ signal CURRENT_CONTROL_BITS : std_logic_vector(10 downto 0);
 signal BYTE_CLOCK_DELAYED : std_logic;
 signal BYTE_CLOCK_DELAYED_2 : std_logic;
 
+constant LED_TIMEOUT : integer := 1110000;          -- Timeout period: 1 frame
+signal LED_COUNTER : integer range 0 to LED_TIMEOUT;
+
 begin
 
 ODDPAR: entity work.ODD_PARITY_DECODER
@@ -77,6 +82,25 @@ H2418: entity work.HAMMING2418_DECODER
     DATA_IN => HAMMING2418_ENCODED,
     DATA_OUT => HAMMING2418_DECODED,
     DATA_VALID_OUT => HAMMING2418_VALID);
+    
+LED_CONTROL: process(CLK_27_750, RESET)
+    begin
+        if RESET = '1' then
+            STATUS_LED_OUT <= '0';
+            LED_COUNTER <= 0;
+        elsif rising_edge(CLK_27_750) then
+            if RX_BYTE = BAD then
+                STATUS_LED_OUT <= '0';
+            elsif RX_BYTE = DATA then
+                STATUS_LED_OUT <= '1';
+                LED_COUNTER <= 0;
+            elsif LED_COUNTER >= LED_TIMEOUT then
+                STATUS_LED_OUT <= '0';
+            else
+                LED_COUNTER <= LED_COUNTER + 1;
+            end if;
+        end if;
+    end process;
 
 MAIN: process(CLK_27_750, RESET)
     begin

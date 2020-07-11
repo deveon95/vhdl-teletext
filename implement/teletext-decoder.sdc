@@ -9,9 +9,9 @@ derive_pll_clocks
 set_false_path -from [get_ports {*}]
 set_false_path -to [get_ports {*}]
 # set false path for keypad mode select switches because synchronisers have been used in the code
-set_false_path -from {KEYPAD:KEYPAD_CONTROLLER|BUTTONS_OUT[1]} -to {SI5351:CLOCK_CONTROLLER|RES_SYNCER}
-set_false_path -from {KEYPAD:KEYPAD_CONTROLLER|BUTTONS_OUT[2]} -to {SI5351:CLOCK_CONTROLLER|REF_SYNCER}
-set_false_path -from {KEYPAD:KEYPAD_CONTROLLER|BUTTONS_OUT[1]} -to {HDMI:HDMI|RES_SYNCER}
+set_false_path -from {KEYPAD:KEYPAD_CONTROLLER|BUTTONS_OUT[13]} -to {SI5351:CLOCK_CONTROLLER|RES_SYNCER}
+set_false_path -from {KEYPAD:KEYPAD_CONTROLLER|BUTTONS_OUT[14]} -to {SI5351:CLOCK_CONTROLLER|REF_SYNCER}
+set_false_path -from {KEYPAD:KEYPAD_CONTROLLER|BUTTONS_OUT[13]} -to {HDMI:HDMI|RES_SYNCER}
 
 set_false_path -from [get_clocks CLK_27_750] -to [get_clocks CLK_VIDEO]
 set_false_path -from [get_clocks CLK_VIDEO] -to [get_clocks CLK_27_750]

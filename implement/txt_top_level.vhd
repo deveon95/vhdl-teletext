@@ -13,53 +13,54 @@ entity TXT_TOP_LEVEL is
     port (
     RESETn     : in  std_logic;
     -- programmable oscillator
-    CLK_27_750 : in  std_logic;
-    CLK_VIDEO  : in  std_logic;
-    CLK_SPARE  : in  std_logic;
-    PRCLK_SDA  : inout std_logic;
-    PRCLK_SCL  : inout std_logic;
+    CLK_27_750  : in  std_logic;
+    CLK_VIDEO   : in  std_logic;
+    CLK_SPARE   : in  std_logic;
+    PRCLK_SDA   : inout std_logic;
+    PRCLK_SCL   : inout std_logic;
     -- data in
-    RX_IN      : in  std_logic;
+    RX_IN       : in  std_logic;
     -- keypad and DIP switches
     KEYPAD_ROWS : inout std_logic_vector(8 downto 0);
     KEYPAD_COLS : in  std_logic_vector(3 downto 0);
     -- LED
-    LED_OUT    : out std_logic;
+    LED_D16_OUT : out std_logic;        -- Turns on once the clock controller has been configured
+    LED_D2_OUT  : out std_logic;        -- Blinks on successful packet reception
     -- HDMI interface
-    HDMI_SDA   : inout std_logic;
-    HDMI_SCL   : inout std_logic;
-    TMDS_CLK   : out std_logic;
+    HDMI_SDA    : inout std_logic;
+    HDMI_SCL    : inout std_logic;
+    TMDS_CLK    : out std_logic;
     --TMDS_CLK_N : out std_logic;
-    TMDS_D0    : out std_logic;
+    TMDS_D0     : out std_logic;
     --TMDS_D0_N : out std_logic;
-    TMDS_D1    : out std_logic;
+    TMDS_D1     : out std_logic;
     --TMDS_D1_N : out std_logic;
-    TMDS_D2    : out std_logic;
+    TMDS_D2     : out std_logic;
     --TMDS_D2_N : out std_logic;
-    HDMI_HPD   : in std_logic;
+    HDMI_HPD    : in std_logic;
     -- SRAM for future use (optional)
-    SRAM_ADDR  : out std_logic_vector(18 downto 0);
-    SRAM_DATA  : inout std_logic_vector(7 downto 0);
-    SRAM_OE_N  : out std_logic;
-    SRAM_WE_N  : out std_logic;
-    SRAM_CE_N  : out std_logic;
+    SRAM_ADDR   : out std_logic_vector(18 downto 0);
+    SRAM_DATA   : inout std_logic_vector(7 downto 0);
+    SRAM_OE_N   : out std_logic;
+    SRAM_WE_N   : out std_logic;
+    SRAM_CE_N   : out std_logic;
     -- SAA7113 Video Processor (optional) - use same pins as oscillator for I2C
-    VP_DATA_IN : in std_logic_vector(7 downto 0);
-    VP_RTCO_IN : in std_logic;
-    VP_RTS0_IN : in std_logic;
-    VP_RTS1_IN : in std_logic;
-    VP_LLC_IN  : in std_logic;
-    -- VGA interface
-    R_OUT      : out std_logic;
-    G_OUT      : out std_logic;
-    B_OUT      : out std_logic;
-    HSYNC_OUT  : out std_logic;
-    VSYNC_OUT  : out std_logic;
-    HSYNC_IN   : in  std_logic;
-    VSYNC_IN   : in  std_logic;
-    R_EN_OUT   : out std_logic;
-    G_EN_OUT   : out std_logic;
-    B_EN_OUT   : out std_logic
+    VP_DATA_IN  : in std_logic_vector(7 downto 0);
+    VP_RTCO_IN  : in std_logic;
+    VP_RTS0_IN  : in std_logic;
+    VP_RTS1_IN  : in std_logic;
+    VP_LLC_IN   : in std_logic;
+    -- VGA interface (optional)
+    R_OUT       : out std_logic;
+    G_OUT       : out std_logic;
+    B_OUT       : out std_logic;
+    HSYNC_OUT   : out std_logic;
+    VSYNC_OUT   : out std_logic;
+    HSYNC_IN    : in  std_logic;
+    VSYNC_IN    : in  std_logic;
+    R_EN_OUT    : out std_logic;
+    G_EN_OUT    : out std_logic;
+    B_EN_OUT    : out std_logic
     );
 end entity TXT_TOP_LEVEL;
 
@@ -478,7 +479,9 @@ DATA_PROCESSOR: entity work.TXT_DATA_PROCESSOR
     ROW_OUT         => ROW,
     PAGE_OUT        => PAGE,
     SUBCODE_OUT     => SUBCODE,
-    CONTROL_BITS_OUT => CONTROL_BITS);
+    CONTROL_BITS_OUT => CONTROL_BITS,
+    
+    STATUS_LED_OUT  => LED_D2_OUT);
     
 KEYPAD_CONTROLLER: entity work.KEYPAD
     generic map(
@@ -683,7 +686,7 @@ CLOCK_CONTROLLER: entity work.SI5351
     SCL_IN => PRCLK_SCL,
     REFRESH_RATE_SELECT_IN => REFRESH_RATE_SELECT,
     RESOLUTION_SELECT_IN => RESOLUTION_SELECT,
-    COMPLETE_OUT => LED_OUT);
+    COMPLETE_OUT => LED_D16_OUT);
     
     PRCLK_SDA <= '0' when PRCLK_SDA_INT = '0' else 'Z';
     PRCLK_SCL <= '0' when PRCLK_SCL_INT = '0' else 'Z';
