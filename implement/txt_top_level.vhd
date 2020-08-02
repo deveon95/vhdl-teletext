@@ -487,7 +487,7 @@ KEYPAD_CONTROLLER: entity work.KEYPAD
     generic map(
     COLS => KEYPAD_COLS'length,
     ROWS => KEYPAD_ROWS'length,
-    DELAY => 277500,    -- 10ms per row
+    DELAY => 69375,    -- 2.5ms per row
     MOMENTARY_MASK => MOMENTARY_MASK
     )
     port map(

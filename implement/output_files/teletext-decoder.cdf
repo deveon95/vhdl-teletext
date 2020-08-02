@@ -4,9 +4,7 @@ JedecChain;
 	DefaultMfr(6E);
 
 	P ActionCode(Cfg)
-		Device PartName(10CL025YU256) Path("Z:/Documents/Projects/Teletext-decoder/fpga/implement/output_files/") File("teletext-decoder.sof") MfrSpec(OpMask(1));
-	P ActionCode(Ign)
-		Device PartName(VTAP10) MfrSpec(OpMask(0));
+		Device PartName(10M08SCE144) Path("Z:/Documents/Projects/Teletext-decoder/fpga-max10/implement/output_files/") File("teletext-decoder.pof") MfrSpec(OpMask(3) Child_OpMask(2 3 3));
 
 ChainEnd;
 
