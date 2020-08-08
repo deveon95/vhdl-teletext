@@ -19,6 +19,7 @@ signal PARALLEL_DATA : std_logic_vector(7 downto 0);
 signal PARALLEL_CLOCK : std_logic;
 signal PARALLEL_FRAME_VALID : std_logic;
 signal PROCESSED_DATA : std_logic_vector(6 downto 0);
+signal PROCESSED_DATA_18B : std_logic_vector(17 downto 0);
 signal PROCESSED_CLOCK : std_logic;
 signal PROCESSED_FRAME_VALID : std_logic;
 
@@ -43,6 +44,7 @@ signal HEADER_PACKET : std_logic := '0';
 begin
     
     CLK_27_750 <= not CLK_27_750 after CLK_PERIOD / 2;
+    PROCESSED_DATA <= PROCESSED_DATA_18B(6 downto 0);
 
 UUT: entity work.TXT_DATA_PROCESSOR
     port map(
@@ -51,7 +53,7 @@ UUT: entity work.TXT_DATA_PROCESSOR
     BYTE_IN => PARALLEL_DATA,
     BYTE_CLOCK_IN => PARALLEL_CLOCK,
     FRAME_VALID_IN => PARALLEL_FRAME_VALID,
-    WORD_OUT => PROCESSED_DATA,
+    WORD_OUT => PROCESSED_DATA_18B,
     WORD_CLOCK_OUT => PROCESSED_CLOCK,
     FRAME_VALID_OUT => PROCESSED_FRAME_VALID,
     MAGAZINE_OUT => MAGAZINE,

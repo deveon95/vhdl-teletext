@@ -17,7 +17,7 @@ entity TXT_DATA_PROCESSOR is
     BYTE_CLOCK_IN   : in  std_logic;
     FRAME_VALID_IN  : in  std_logic;
     
-    WORD_OUT        : out std_logic_vector(6 downto 0);
+    WORD_OUT        : out std_logic_vector(17 downto 0);
     WORD_CLOCK_OUT  : out std_logic;
     FRAME_VALID_OUT : out std_logic;
     MAGAZINE_OUT    : out std_logic_vector(2 downto 0);
@@ -48,7 +48,7 @@ signal HAMMING2418_ENCODED : std_logic_vector(23 downto 0);
 signal HAMMING2418_DECODED : std_logic_vector(17 downto 0);
 signal HAMMING2418_VALID : std_logic;
 
-type RX_BYTE_TYPES is (MAGROW1, MAGROW2, PAGEUNITS, PAGETENS, SUBCODE1, SUBCODE2, SUBCODE3, SUBCODE4, CONTROLBITS1, CONTROLBITS2, DATA, HAMMING84_DATA, BAD);
+type RX_BYTE_TYPES is (MAGROW1, MAGROW2, PAGEUNITS, PAGETENS, SUBCODE1, SUBCODE2, SUBCODE3, SUBCODE4, CONTROLBITS1, CONTROLBITS2, DATA, HAMMING84_DATA, HAMMING2418_DATA1, HAMMING2418_DATA2, HAMMING2418_DATA3, BAD);
 signal RX_BYTE : RX_BYTE_TYPES;
 signal CURRENT_MAGAZINE : std_logic_vector(2 downto 0);
 signal CURRENT_LINE : std_logic_vector(4 downto 0);
@@ -158,7 +158,8 @@ MAIN: process(CLK_27_750, RESET)
                                 RX_BYTE <= PAGEUNITS;
                             elsif GOOD_HEADER_RECEIVED(to_integer(unsigned(CURRENT_MAGAZINE))) = '1' then
                                 -- Proceed to data processing only when a good header has been received
-                                if CURRENT_LINE = "11011" then
+                                if CURRENT_LINE = "11011" or CURRENT_LINE = "11010" or CURRENT_LINE = "11100" then
+                                    -- Line 27, 26 or 28
                                     RX_BYTE <= HAMMING84_DATA;
                                 else
                                     RX_BYTE <= DATA;
@@ -285,9 +286,9 @@ MAIN: process(CLK_27_750, RESET)
                         FRAME_VALID_OUT <= '1';
                     elsif BYTE_CLOCK_DELAYED = '1' then
                         if ODD_PARITY_VALID = '1' then
-                            WORD_OUT <= ODD_PARITY_DECODED;
+                            WORD_OUT <= "00000000000" & ODD_PARITY_DECODED;
                         else
-                            WORD_OUT <= BLANK_CHAR;
+                            WORD_OUT <= "00000000000" & BLANK_CHAR;
                         end if;
                         WORD_CLOCK_OUT <= '1';
                     else
@@ -303,11 +304,56 @@ MAIN: process(CLK_27_750, RESET)
                         FRAME_VALID_OUT <= '1';
                     elsif BYTE_CLOCK_DELAYED = '1' then
                         if HAMMING84_VALID = '1' then
-                            WORD_OUT <= "000" & HAMMING84_DECODED;
+                            WORD_OUT <= "00000000000" & "000" & HAMMING84_DECODED;
                         else
-                            WORD_OUT <= "1111111";
+                            WORD_OUT <= "00000000000" & "1110000";
                         end if;
                         WORD_CLOCK_OUT <= '1';
+                        -- If line 26 or 28 then only the first byte is Hamming 8/4, and the rest is Hamming 24/18
+                        if CURRENT_LINE = "11010" or CURRENT_LINE = "11100" then
+                            RX_BYTE <= HAMMING2418_DATA1;
+                        end if;
+                    else
+                        WORD_CLOCK_OUT <= '0';
+                    end if;
+                
+                when HAMMING2418_DATA1 =>
+                    if BYTE_CLOCK_IN = '1' then
+                        HAMMING2418_ENCODED(7 downto 0) <= BYTE_IN;
+                        PAGE_OUT <= CURRENT_PAGE;
+                        SUBCODE_OUT <= CURRENT_SUBCODE;
+                        CONTROL_BITS_OUT <= CURRENT_CONTROL_BITS;
+                        FRAME_VALID_OUT <= '1';
+                    elsif BYTE_CLOCK_DELAYED = '1' then
+                        RX_BYTE <= HAMMING2418_DATA2;
+                    end if;
+                
+                when HAMMING2418_DATA2 =>
+                    if BYTE_CLOCK_IN = '1' then
+                        HAMMING2418_ENCODED(15 downto 8) <= BYTE_IN;
+                        PAGE_OUT <= CURRENT_PAGE;
+                        SUBCODE_OUT <= CURRENT_SUBCODE;
+                        CONTROL_BITS_OUT <= CURRENT_CONTROL_BITS;
+                        FRAME_VALID_OUT <= '1';
+                    elsif BYTE_CLOCK_DELAYED = '1' then
+                        RX_BYTE <= HAMMING2418_DATA3;
+                    end if;
+                
+                when HAMMING2418_DATA3 =>
+                    if BYTE_CLOCK_IN = '1' then
+                        HAMMING2418_ENCODED(23 downto 16) <= BYTE_IN;
+                        PAGE_OUT <= CURRENT_PAGE;
+                        SUBCODE_OUT <= CURRENT_SUBCODE;
+                        CONTROL_BITS_OUT <= CURRENT_CONTROL_BITS;
+                        FRAME_VALID_OUT <= '1';
+                    elsif BYTE_CLOCK_DELAYED = '1' then
+                        if HAMMING84_VALID = '1' then
+                            WORD_OUT <= HAMMING2418_DECODED;
+                        else
+                            WORD_OUT <= (others => '0');
+                        end if;
+                        WORD_CLOCK_OUT <= '1';
+                    elsif BYTE_CLOCK_DELAYED_2 = '1' then
                     else
                         WORD_CLOCK_OUT <= '0';
                     end if;

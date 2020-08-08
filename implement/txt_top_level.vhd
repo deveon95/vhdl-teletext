@@ -126,7 +126,7 @@ signal SERIAL_FRAME_VALID : std_logic;
 signal BYTE_DATA : std_logic_vector(7 downto 0);
 signal BYTE_CLOCK : std_logic;
 signal BYTE_FRAME_VALID : std_logic;
-signal WORD_DATA : std_logic_vector(6 downto 0);
+signal WORD_DATA : std_logic_vector(17 downto 0);
 signal WORD_CLOCK : std_logic;
 signal WORD_FRAME_VALID : std_logic;
 signal MAGAZINE    : std_logic_vector(2 downto 0);
@@ -197,7 +197,7 @@ signal TEMP_DIG_3   : std_logic_vector(3 downto 0);
 -- Dual Port RAM signals
 signal DPR_READ_DATA : std_logic_vector(6 downto 0);
 signal DPR_READ_ADDRESS : std_logic_vector(9 downto 0);
-signal DPR_WRITE_ADDRESS : std_logic_vector(9 downto 0);
+signal DPR_WRITE_ADDRESS : std_logic_vector(10 downto 0);
 signal DPR_WRITE_EN : std_logic;
 signal DPR_WRITE_DATA : std_logic_vector(6 downto 0);
 
@@ -580,7 +580,7 @@ MEMORY_CONTROLLER: entity work.TXT_MEMORY_CONTROLLER
 DUAL_PORT_RAM: entity work.DPR_IP_VARIATION
     port map(
     data => DPR_WRITE_DATA,
-    rdaddress => DPR_READ_ADDRESS,
+    rdaddress => "0" & DPR_READ_ADDRESS,
     rdclock => CLK_VIDEO,
     wraddress => DPR_WRITE_ADDRESS,
     wrclock => CLK_27_750,

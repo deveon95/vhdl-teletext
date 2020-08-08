@@ -13,7 +13,7 @@ entity TXT_MEMORY_CONTROLLER is
     CLK_27_750       : in  std_logic;
     RESET            : in  std_logic;
     
-    WORD_IN          : in  std_logic_vector(6 downto 0);
+    WORD_IN          : in  std_logic_vector(17 downto 0);
     WORD_CLOCK_IN    : in  std_logic;
     FRAME_VALID_IN   : in  std_logic;
     UPCOMING_FRAME_IN : in std_logic;
@@ -25,7 +25,7 @@ entity TXT_MEMORY_CONTROLLER is
     CONTROL_BITS_IN  : in  std_logic_vector(10 downto 0);
     
     MEM_DATA_OUT     : out std_logic_vector(6 downto 0);
-    MEM_ADDRESS_OUT  : out std_logic_vector(9 downto 0);
+    MEM_ADDRESS_OUT  : out std_logic_vector(10 downto 0);
     MEM_WREN_OUT     : out std_logic;
     
     REQ_MAGAZINE_IN  : in  std_logic_vector(2 downto 0);
@@ -62,12 +62,20 @@ signal STATUS_UPDATED : std_logic;
 signal LAST_LOADED_MAGAZINE : std_logic_vector(2 downto 0);
 signal LAST_LOADED_PAGE : std_logic_vector(7 downto 0);
 signal LAST_LOADED_SUBCODE : std_logic_vector(12 downto 0);
-signal LINE_START_ADDRESS : integer range 0 to 1023;
-signal ADDRESS_COUNTER : integer range 0 to 1023;
+signal LINE_START_ADDRESS : integer range 0 to 2047;
+signal ADDRESS_COUNTER : integer range 0 to 2047;
 signal ROW_INTEGER : integer range 0 to 31;
+signal DESIGNATION : std_logic_vector(3 downto 0);
+signal MEM_WREN : std_logic;
+signal MEM_DATA : std_logic_vector(6 downto 0);
+signal MEM_WREN_HAMMING : std_logic;
+signal MEM_DATA_HAMMING : std_logic_vector(6 downto 0);
+signal MEM_START_HAMMING_WRITE : std_logic;
 
 type STATE_TYPE is (WAIT_FOR_FRAME, RECEIVE_FRAME, NEXT_WORD, ERASE_MEMORY_START, ERASE_MEMORY, UPDATE_STATUS, UPDATE_STATUS_NEXT, IGNORE_FRAME);
 signal STATE : STATE_TYPE;
+type HAMMING_WRITER_STATE_TYPE is (WAIT_FOR_WRITE, BYTE_1, BYTE_2, BYTE_3);
+signal HAMMING_WRITER_STATE : HAMMING_WRITER_STATE_TYPE;
 type STATUS_ARRAY_TYPE is array (0 to 7) of std_logic_vector(6 downto 0);
 signal STATUS_ARRAY : STATUS_ARRAY_TYPE;
 signal STATUS_ARRAY_LAST : STATUS_ARRAY_TYPE;
@@ -77,9 +85,9 @@ MAIN: process(CLK_27_750, RESET)
     begin
         if RESET = '1' then
             MEMORY_ERASE_REQUIRED <= '0';
-            MEM_WREN_OUT <= '0';
+            MEM_WREN <= '0';
             STATE <= WAIT_FOR_FRAME;
-            MEM_DATA_OUT <= (others => '0');
+            MEM_DATA <= (others => '0');
             ADDRESS_COUNTER <= 0;
             STATUS_UPDATED <= '0';
             LAST_LOADED_MAGAZINE <= (others => '0');
@@ -91,11 +99,12 @@ MAIN: process(CLK_27_750, RESET)
             YEL_PAGE_OUT <= (others => '1');
             BLU_PAGE_OUT <= (others => '1');
             IDX_PAGE_OUT <= (others => '1');
+            DESIGNATION <= (others => '0');
         elsif rising_edge(CLK_27_750) then
             
             case STATE is
             when WAIT_FOR_FRAME =>
-                MEM_WREN_OUT <= '0';
+                MEM_WREN <= '0';
                 -- Show rolling header when waiting for page. CONTROL_BITS_IN(7) is Magazine Serial
                 if FRAME_VALID_IN = '1' and (MAGAZINE_IN = REQ_MAGAZINE_IN or CONTROL_BITS_IN(7) = '1')
                 and (ROW_INTEGER = 0) then
@@ -135,18 +144,44 @@ MAIN: process(CLK_27_750, RESET)
                     end if;
                     PAGE_FOUND_END <= PAGE_FOUND;
                 elsif WORD_CLOCK_IN = '1' then
-                    MEM_DATA_OUT <= WORD_IN;
                     -- IF statement suppresses write enable for header row prior to clock when page has not been found
                     if ROW_INTEGER /= 0 or PAGE_FOUND_END = '0' or ADDRESS_COUNTER >= 32 then
                         -- Enable memory write signal only when current packet is a visible packet
-                        MEM_WREN_OUT <= VISIBLE_PACKET;
+                        MEM_WREN <= VISIBLE_PACKET;
+                        MEM_DATA <= WORD_IN(6 downto 0);
                     end if;
                     -- Handle non-visible packets
+                    -- Packet X/28 has a Hamming 8/4 coded designation code and the data is all Hamming 24/18 encoded
+                    -- Hamming 24/18 decoding is a parallel operation, which can only be completed once all three bytes have been received.
+                    -- This means that all three bytes must be written to the RAM in one byte period (32 clock cycles).
+                    -- TXT_DATA_PROCESSOR will clock the WORD_CLOCK line once when each Hamming 24/18-decoded word is available
+                    -- and TXT_MEMORY_CONTROLLER must write the word to three RAM bytes.
+                    if ROW_INTEGER = 28 then
+                        DESIGNATION <= WORD_IN(3 downto 0);
+                        case ADDRESS_COUNTER is
+                        when 0 => if WORD_IN(6 downto 0) /= "0000000" and WORD_IN(6 downto 0) /= "0000001" and WORD_IN(6 downto 0) /= "0000011" and WORD_IN(6 downto 0) /= "0000100" then STATE <= IGNORE_FRAME; end if;
+                        when others =>
+                            MEM_START_HAMMING_WRITE <= '1';
+                            ADDRESS_COUNTER <= LINE_START_ADDRESS;
+                        end case;
+                    
+                    -- Packet X/26 has a Hamming 8/4 coded designation code and the data is all Hamming 24/18 encoded
+                    elsif ROW_INTEGER = 26 then
+                        DESIGNATION <= WORD_IN(3 downto 0);
+                        case ADDRESS_COUNTER is
+                        when 0 => if WORD_IN(6 downto 4) /= "000" then STATE <= IGNORE_FRAME; end if;
+                        when others =>
+                            MEM_START_HAMMING_WRITE <= '1';
+                            ADDRESS_COUNTER <= LINE_START_ADDRESS;
+                        end case;
+                    
                     -- Fastext editorial links - Hamming code handling is done in TXT_DATA_PROCESSOR and the bits are rearranged
-                    if ROW_INTEGER = 27 then
+                    -- packet X/27 is entirely Hamming 8/4 encoded
+                    elsif ROW_INTEGER = 27 then
+                        DESIGNATION <= WORD_IN(3 downto 0);
                         -- Set page number outputs
                         case ADDRESS_COUNTER is
-                        when 0 => if WORD_IN /= "0000000" then STATE <= IGNORE_FRAME; end if;       -- Require designation code 0
+                        when 0 => if WORD_IN(6 downto 0) /= "0000000" then STATE <= IGNORE_FRAME; end if;       -- Require designation code 0
                         when 1 => RED_PAGE_OUT(3 downto 0) <= WORD_IN(3) & WORD_IN(2) & WORD_IN(1) & WORD_IN(0);
                         when 2 => RED_PAGE_OUT(7 downto 4) <= WORD_IN(3) & WORD_IN(2) & WORD_IN(1) & WORD_IN(0);
                         when 4 => RED_PAGE_OUT(8) <= WORD_IN(3) XOR MAGAZINE_IN(0);
@@ -184,12 +219,13 @@ MAIN: process(CLK_27_750, RESET)
                 end if;
             when NEXT_WORD =>
                 ADDRESS_COUNTER <= ADDRESS_COUNTER + 1;
-                MEM_WREN_OUT <= '0';
+                MEM_WREN <= '0';
+                MEM_START_HAMMING_WRITE <= '0';
                 STATE <= RECEIVE_FRAME;
             when ERASE_MEMORY_START =>
                 ADDRESS_COUNTER <= 40;
-                MEM_DATA_OUT <= "0100000";
-                MEM_WREN_OUT <= '1';
+                MEM_DATA <= "0100000";
+                MEM_WREN <= '1';
                 STATE <= ERASE_MEMORY;
             when ERASE_MEMORY =>
                 if ADDRESS_COUNTER < 1000 then
@@ -198,12 +234,12 @@ MAIN: process(CLK_27_750, RESET)
                     STATE <= WAIT_FOR_FRAME;
                 end if;
             when UPDATE_STATUS =>
-                MEM_DATA_OUT <= STATUS_ARRAY(ADDRESS_COUNTER);
-                MEM_WREN_OUT <= '1';
+                MEM_DATA <= STATUS_ARRAY(ADDRESS_COUNTER);
+                MEM_WREN <= '1';
                 STATUS_UPDATED <= '0';
                 STATE <= UPDATE_STATUS_NEXT;
             when UPDATE_STATUS_NEXT =>
-                MEM_WREN_OUT <= '1';
+                MEM_WREN <= '1';
                 if ADDRESS_COUNTER = 7 or UPCOMING_FRAME_IN = '1' then
                     STATE <= WAIT_FOR_FRAME;
                 else
@@ -244,13 +280,36 @@ MAIN: process(CLK_27_750, RESET)
                           40 * 21 when ROW_IN = "10101" else
                           40 * 22 when ROW_IN = "10110" else
                           40 * 23 when ROW_IN = "10111" else
-                          40 * 24 when ROW_IN = "11000" else 0;
+                          40 * 24 when ROW_IN = "11000" else
+                          
+                          1180 when ROW_IN = "11010" and DESIGNATION = "0000" else
+                          1219 when ROW_IN = "11010" and DESIGNATION = "0001" else
+                          1258 when ROW_IN = "11010" and DESIGNATION = "0010" else
+                          1297 when ROW_IN = "11010" and DESIGNATION = "0011" else
+                          1336 when ROW_IN = "11010" and DESIGNATION = "0100" else
+                          1375 when ROW_IN = "11010" and DESIGNATION = "0101" else
+                          1414 when ROW_IN = "11010" and DESIGNATION = "0110" else
+                          1453 when ROW_IN = "11010" and DESIGNATION = "0111" else
+                          1492 when ROW_IN = "11010" and DESIGNATION = "1000" else
+                          1531 when ROW_IN = "11010" and DESIGNATION = "1001" else
+                          1570 when ROW_IN = "11010" and DESIGNATION = "1010" else
+                          1609 when ROW_IN = "11010" and DESIGNATION = "1011" else
+                          1648 when ROW_IN = "11010" and DESIGNATION = "1100" else
+                          1687 when ROW_IN = "11010" and DESIGNATION = "1101" else
+                          1726 when ROW_IN = "11010" and DESIGNATION = "1110" else
+                          1765 when ROW_IN = "11010" and DESIGNATION = "1111" else
+                          1003 when ROW_IN = "11011" else
+                          1024 when ROW_IN = "11100" and DESIGNATION = "0000" else
+                          1063 when ROW_IN = "11100" and DESIGNATION = "0001" else
+                          1102 when ROW_IN = "11100" and DESIGNATION = "0011" else
+                          1141 when ROW_IN = "11100" and DESIGNATION = "0100" else
+                          0;
 
     ROW_INTEGER <= to_integer(unsigned(ROW_IN));
     
     VISIBLE_PACKET <= '1' when ROW_INTEGER <= 24 else '0';
     
-    MEM_ADDRESS_OUT <= std_logic_vector(to_unsigned(ADDRESS_COUNTER, 10));
+    MEM_ADDRESS_OUT <= std_logic_vector(to_unsigned(ADDRESS_COUNTER, 11));
     
     STATUS_ARRAY(0) <= "0000111";
     STATUS_ARRAY(1) <= STATUS_IN_1;
@@ -263,6 +322,40 @@ MAIN: process(CLK_27_750, RESET)
 
     CLEAR_PAGE_FOUND <= '0' when LAST_LOADED_PAGE = REQ_PAGE_IN and LAST_LOADED_MAGAZINE = REQ_MAGAZINE_IN and (REQ_SUBCODE_SPEC_IN = '0' or LAST_LOADED_SUBCODE = REQ_SUBCODE_IN) else '1';
     LAST_SUBCODE_OUT <= LAST_LOADED_SUBCODE;
+    
+    MEM_WREN_OUT <= MEM_WREN or MEM_WREN_HAMMING;
+    MEM_DATA_OUT <= MEM_DATA_HAMMING when MEM_WREN_HAMMING = '1' else MEM_DATA;
+
+-- HAMMING_WRITER: Writes the three bytes that make up each Hamming 24/18 triplet to the memory
+HAMMING_WRITER: process(CLK_27_750, RESET)
+    begin
+        if RESET = '1' then
+            MEM_DATA_HAMMING <= (others => '0');
+            MEM_WREN_HAMMING <= '0';
+            HAMMING_WRITER_STATE <= WAIT_FOR_WRITE;
+        elsif rising_edge(CLK_27_750) then
+            case HAMMING_WRITER_STATE is
+            when WAIT_FOR_WRITE =>
+                MEM_WREN_HAMMING <= '0';
+                if MEM_START_HAMMING_WRITE = '1' then
+                    HAMMING_WRITER_STATE <= BYTE_1;
+                end if;
+            when BYTE_1 =>
+                MEM_WREN_HAMMING <= '1';
+                MEM_DATA_HAMMING <= "0" & WORD_IN(17 downto 12);
+                HAMMING_WRITER_STATE <= BYTE_2;
+            when BYTE_2 =>
+                MEM_WREN_HAMMING <= '1';
+                MEM_DATA_HAMMING <= "0" & WORD_IN(11 downto 6);
+                HAMMING_WRITER_STATE <= BYTE_3;
+            when BYTE_3 =>
+                MEM_WREN_HAMMING <= '1';
+                MEM_DATA_HAMMING <= "0" & WORD_IN(5 downto 0);
+                HAMMING_WRITER_STATE <= WAIT_FOR_WRITE;
+            when others =>
+            end case;
+        end if;
+    end process;
     
 PAGE_FOUND_LATCH: process(CLK_27_750, RESET)
     begin
