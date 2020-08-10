@@ -196,7 +196,7 @@ signal TEMP_DIG_3   : std_logic_vector(3 downto 0);
 
 -- Dual Port RAM signals
 signal DPR_READ_DATA : std_logic_vector(6 downto 0);
-signal DPR_READ_ADDRESS : std_logic_vector(9 downto 0);
+signal DPR_READ_ADDRESS : std_logic_vector(10 downto 0);
 signal DPR_WRITE_ADDRESS : std_logic_vector(10 downto 0);
 signal DPR_WRITE_EN : std_logic;
 signal DPR_WRITE_DATA : std_logic_vector(6 downto 0);
@@ -204,9 +204,9 @@ signal DPR_WRITE_DATA : std_logic_vector(6 downto 0);
 -- Video signals
 signal NEW_ROW : std_logic;
 signal NEW_SCREEN : std_logic;
-signal R : std_logic;
-signal G : std_logic;
-signal B : std_logic;
+signal R : std_logic_vector(3 downto 0);
+signal G : std_logic_vector(3 downto 0);
+signal B : std_logic_vector(3 downto 0);
 signal TMDS_D0_UNBUF : std_logic;
 signal TMDS_D1_UNBUF : std_logic;
 signal TMDS_D2_UNBUF : std_logic;
@@ -580,7 +580,7 @@ MEMORY_CONTROLLER: entity work.TXT_MEMORY_CONTROLLER
 DUAL_PORT_RAM: entity work.DPR_IP_VARIATION
     port map(
     data => DPR_WRITE_DATA,
-    rdaddress => "0" & DPR_READ_ADDRESS,
+    rdaddress => DPR_READ_ADDRESS,
     rdclock => CLK_VIDEO,
     wraddress => DPR_WRITE_ADDRESS,
     wrclock => CLK_27_750,
@@ -604,6 +604,7 @@ DISPLAY_GENERATOR: entity work.DISPLAY_GENERATOR
     REVEAL_IN => REVEAL_ENABLE,
     AB_EN_IN => AB_ENABLE,
     SIZE_SELECT_IN => RESOLUTION_SELECT,
+    LEVEL_2_5_ENABLE_IN => '1',
     
     NEW_ROW_IN => NEW_ROW,
     NEW_SCREEN_IN => NEW_SCREEN,
@@ -641,9 +642,9 @@ HDMI: entity work.HDMI
     CLK_PIXEL => CLK_VIDEO_PIXEL,
     CLK_BIT => CLK_VIDEO_BIT,
     RESOLUTION_SELECT_IN => RESOLUTION_SELECT,
-    R_IN => R & R & R & R & R & R & R & R,
-    G_IN => G & G & G & G & G & G & G & G,
-    B_IN => B & B & B & B & B & B & B & B,
+    R_IN => R & R,
+    G_IN => G & G,
+    B_IN => B & B,
     NEW_ROW_OUT => NEW_ROW,
     NEW_SCREEN_OUT => NEW_SCREEN,
     R_OUT => TMDS_D2_UNBUF,

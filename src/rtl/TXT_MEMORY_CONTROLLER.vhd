@@ -51,6 +51,7 @@ end entity TXT_MEMORY_CONTROLLER;
 
 architecture RTL of TXT_MEMORY_CONTROLLER is
 
+constant TEXT_COLS : integer := 40;
 signal MEMORY_ERASE_REQUIRED : std_logic;
 signal VISIBLE_PACKET : std_logic;
 signal PAGE_FOUND     : std_logic;          -- Updated at beginning of packet
@@ -64,18 +65,14 @@ signal LAST_LOADED_PAGE : std_logic_vector(7 downto 0);
 signal LAST_LOADED_SUBCODE : std_logic_vector(12 downto 0);
 signal LINE_START_ADDRESS : integer range 0 to 2047;
 signal ADDRESS_COUNTER : integer range 0 to 2047;
+signal COLUMN_COUNTER : integer range 0 to TEXT_COLS;
 signal ROW_INTEGER : integer range 0 to 31;
 signal DESIGNATION : std_logic_vector(3 downto 0);
 signal MEM_WREN : std_logic;
 signal MEM_DATA : std_logic_vector(6 downto 0);
-signal MEM_WREN_HAMMING : std_logic;
-signal MEM_DATA_HAMMING : std_logic_vector(6 downto 0);
-signal MEM_START_HAMMING_WRITE : std_logic;
 
-type STATE_TYPE is (WAIT_FOR_FRAME, RECEIVE_FRAME, NEXT_WORD, ERASE_MEMORY_START, ERASE_MEMORY, UPDATE_STATUS, UPDATE_STATUS_NEXT, IGNORE_FRAME);
+type STATE_TYPE is (WAIT_FOR_FRAME, RECEIVE_FRAME, NEXT_WORD, ERASE_MEMORY_START, ERASE_MEMORY, UPDATE_STATUS, UPDATE_STATUS_NEXT, IGNORE_FRAME, HAMMING2418_1A, HAMMING2418_1B, HAMMING2418_2A, HAMMING2418_2B, HAMMING2418_3A, HAMMING2418_3B);
 signal STATE : STATE_TYPE;
-type HAMMING_WRITER_STATE_TYPE is (WAIT_FOR_WRITE, BYTE_1, BYTE_2, BYTE_3);
-signal HAMMING_WRITER_STATE : HAMMING_WRITER_STATE_TYPE;
 type STATUS_ARRAY_TYPE is array (0 to 7) of std_logic_vector(6 downto 0);
 signal STATUS_ARRAY : STATUS_ARRAY_TYPE;
 signal STATUS_ARRAY_LAST : STATUS_ARRAY_TYPE;
@@ -89,6 +86,7 @@ MAIN: process(CLK_27_750, RESET)
             STATE <= WAIT_FOR_FRAME;
             MEM_DATA <= (others => '0');
             ADDRESS_COUNTER <= 0;
+            COLUMN_COUNTER <= 0;
             STATUS_UPDATED <= '0';
             LAST_LOADED_MAGAZINE <= (others => '0');
             LAST_LOADED_PAGE <= (others => '1');
@@ -109,6 +107,7 @@ MAIN: process(CLK_27_750, RESET)
                 if FRAME_VALID_IN = '1' and (MAGAZINE_IN = REQ_MAGAZINE_IN or CONTROL_BITS_IN(7) = '1')
                 and (ROW_INTEGER = 0) then
                     ADDRESS_COUNTER <= LINE_START_ADDRESS;
+                    COLUMN_COUNTER <= 0;
                     MEMORY_ERASE_REQUIRED <= '0';
                     STATE <= RECEIVE_FRAME;
                 end if;
@@ -116,6 +115,7 @@ MAIN: process(CLK_27_750, RESET)
                 if FRAME_VALID_IN = '1' and MAGAZINE_IN = REQ_MAGAZINE_IN 
                 and (PAGE_IN = REQ_PAGE_IN and (REQ_SUBCODE_IN = SUBCODE_IN or REQ_SUBCODE_SPEC_IN = '0')) then
                     ADDRESS_COUNTER <= LINE_START_ADDRESS;
+                    COLUMN_COUNTER <= 0;
                     SET_PAGE_FOUND <= '1';
                     -- Erase page if appropriate bit is set or new page is a different page number. Full Field detection (packet 8/30) required.
                     if PAGE_IN /= LAST_LOADED_PAGE or MAGAZINE_IN /= LAST_LOADED_MAGAZINE then
@@ -131,6 +131,7 @@ MAIN: process(CLK_27_750, RESET)
                 -- Update status when change in the eight status characters is detected
                 if STATUS_NEEDS_UPDATING = '1' and UPCOMING_FRAME_IN = '0' then
                     ADDRESS_COUNTER <= 0;
+                    COLUMN_COUNTER <= 0;
                     STATE <= UPDATE_STATUS;
                     STATUS_UPDATED <= '1';
                 end if;
@@ -144,6 +145,7 @@ MAIN: process(CLK_27_750, RESET)
                     end if;
                     PAGE_FOUND_END <= PAGE_FOUND;
                 elsif WORD_CLOCK_IN = '1' then
+                    STATE <= NEXT_WORD;
                     -- IF statement suppresses write enable for header row prior to clock when page has not been found
                     if ROW_INTEGER /= 0 or PAGE_FOUND_END = '0' or ADDRESS_COUNTER >= 32 then
                         -- Enable memory write signal only when current packet is a visible packet
@@ -158,11 +160,13 @@ MAIN: process(CLK_27_750, RESET)
                     -- and TXT_MEMORY_CONTROLLER must write the word to three RAM bytes.
                     if ROW_INTEGER = 28 then
                         DESIGNATION <= WORD_IN(3 downto 0);
-                        case ADDRESS_COUNTER is
+                        case COLUMN_COUNTER is
                         when 0 => if WORD_IN(6 downto 0) /= "0000000" and WORD_IN(6 downto 0) /= "0000001" and WORD_IN(6 downto 0) /= "0000011" and WORD_IN(6 downto 0) /= "0000100" then STATE <= IGNORE_FRAME; end if;
-                        when others =>
-                            MEM_START_HAMMING_WRITE <= '1';
+                        when 1 =>
                             ADDRESS_COUNTER <= LINE_START_ADDRESS;
+                            STATE <= HAMMING2418_1A;
+                        when others =>
+                            STATE <= HAMMING2418_1A;
                         end case;
                     
                     -- Packet X/26 has a Hamming 8/4 coded designation code and the data is all Hamming 24/18 encoded
@@ -170,9 +174,11 @@ MAIN: process(CLK_27_750, RESET)
                         DESIGNATION <= WORD_IN(3 downto 0);
                         case ADDRESS_COUNTER is
                         when 0 => if WORD_IN(6 downto 4) /= "000" then STATE <= IGNORE_FRAME; end if;
-                        when others =>
-                            MEM_START_HAMMING_WRITE <= '1';
+                        when 1 =>
                             ADDRESS_COUNTER <= LINE_START_ADDRESS;
+                            STATE <= HAMMING2418_1A;
+                        when others =>
+                            STATE <= HAMMING2418_1A;
                         end case;
                     
                     -- Fastext editorial links - Hamming code handling is done in TXT_DATA_PROCESSOR and the bits are rearranged
@@ -180,7 +186,7 @@ MAIN: process(CLK_27_750, RESET)
                     elsif ROW_INTEGER = 27 then
                         DESIGNATION <= WORD_IN(3 downto 0);
                         -- Set page number outputs
-                        case ADDRESS_COUNTER is
+                        case COLUMN_COUNTER is
                         when 0 => if WORD_IN(6 downto 0) /= "0000000" then STATE <= IGNORE_FRAME; end if;       -- Require designation code 0
                         when 1 => RED_PAGE_OUT(3 downto 0) <= WORD_IN(3) & WORD_IN(2) & WORD_IN(1) & WORD_IN(0);
                         when 2 => RED_PAGE_OUT(7 downto 4) <= WORD_IN(3) & WORD_IN(2) & WORD_IN(1) & WORD_IN(0);
@@ -206,7 +212,7 @@ MAIN: process(CLK_27_750, RESET)
                         end case;
                         -- Set page number outputs to invalid values if a Hamming 8/4 error is detected
                         -- TXT_DATA_PROCESSOR indicates failed bytes by setting bits 4, 5 and 6 in the word
-                        if ADDRESS_COUNTER <= 36 and WORD_IN(4) = '1' then
+                        if COLUMN_COUNTER <= 36 and WORD_IN(4) = '1' then
                             STATE <= IGNORE_FRAME;
                             RED_PAGE_OUT <= (others => '1');
                             GRN_PAGE_OUT <= (others => '1');
@@ -215,12 +221,39 @@ MAIN: process(CLK_27_750, RESET)
                             IDX_PAGE_OUT <= (others => '1');
                         end if;
                     end if;
-                    STATE <= NEXT_WORD;
                 end if;
             when NEXT_WORD =>
+                -- A way of incrementing this for each of the three Hamming 18/24 bytes is needed
                 ADDRESS_COUNTER <= ADDRESS_COUNTER + 1;
+                COLUMN_COUNTER <= COLUMN_COUNTER + 1;
                 MEM_WREN <= '0';
-                MEM_START_HAMMING_WRITE <= '0';
+                STATE <= RECEIVE_FRAME;
+            when HAMMING2418_1A =>
+                MEM_WREN <= '1';
+                MEM_DATA <= "1" & WORD_IN(17 downto 12);
+                STATE <= HAMMING2418_1B;
+            when HAMMING2418_1B =>
+                ADDRESS_COUNTER <= ADDRESS_COUNTER + 1;
+                COLUMN_COUNTER <= COLUMN_COUNTER + 1;
+                MEM_WREN <= '0';
+                STATE <= HAMMING2418_2A;
+            when HAMMING2418_2A =>
+                MEM_WREN <= '1';
+                MEM_DATA <= "1" & WORD_IN(11 downto 6);
+                STATE <= HAMMING2418_2B;
+            when HAMMING2418_2B =>
+                ADDRESS_COUNTER <= ADDRESS_COUNTER + 1;
+                COLUMN_COUNTER <= COLUMN_COUNTER + 1;
+                MEM_WREN <= '0';
+                STATE <= HAMMING2418_3A;
+            when HAMMING2418_3A =>
+                MEM_WREN <= '1';
+                MEM_DATA <= "1" & WORD_IN(5 downto 0);
+                STATE <= HAMMING2418_3B;
+            when HAMMING2418_3B =>
+                ADDRESS_COUNTER <= ADDRESS_COUNTER + 1;
+                COLUMN_COUNTER <= COLUMN_COUNTER + 1;
+                MEM_WREN <= '0';
                 STATE <= RECEIVE_FRAME;
             when ERASE_MEMORY_START =>
                 ADDRESS_COUNTER <= 40;
@@ -244,6 +277,7 @@ MAIN: process(CLK_27_750, RESET)
                     STATE <= WAIT_FOR_FRAME;
                 else
                     ADDRESS_COUNTER <= ADDRESS_COUNTER + 1;
+                    COLUMN_COUNTER <= COLUMN_COUNTER + 1;
                     STATE <= UPDATE_STATUS;
                 end if;
             when IGNORE_FRAME =>
@@ -323,39 +357,8 @@ MAIN: process(CLK_27_750, RESET)
     CLEAR_PAGE_FOUND <= '0' when LAST_LOADED_PAGE = REQ_PAGE_IN and LAST_LOADED_MAGAZINE = REQ_MAGAZINE_IN and (REQ_SUBCODE_SPEC_IN = '0' or LAST_LOADED_SUBCODE = REQ_SUBCODE_IN) else '1';
     LAST_SUBCODE_OUT <= LAST_LOADED_SUBCODE;
     
-    MEM_WREN_OUT <= MEM_WREN or MEM_WREN_HAMMING;
-    MEM_DATA_OUT <= MEM_DATA_HAMMING when MEM_WREN_HAMMING = '1' else MEM_DATA;
-
--- HAMMING_WRITER: Writes the three bytes that make up each Hamming 24/18 triplet to the memory
-HAMMING_WRITER: process(CLK_27_750, RESET)
-    begin
-        if RESET = '1' then
-            MEM_DATA_HAMMING <= (others => '0');
-            MEM_WREN_HAMMING <= '0';
-            HAMMING_WRITER_STATE <= WAIT_FOR_WRITE;
-        elsif rising_edge(CLK_27_750) then
-            case HAMMING_WRITER_STATE is
-            when WAIT_FOR_WRITE =>
-                MEM_WREN_HAMMING <= '0';
-                if MEM_START_HAMMING_WRITE = '1' then
-                    HAMMING_WRITER_STATE <= BYTE_1;
-                end if;
-            when BYTE_1 =>
-                MEM_WREN_HAMMING <= '1';
-                MEM_DATA_HAMMING <= "0" & WORD_IN(17 downto 12);
-                HAMMING_WRITER_STATE <= BYTE_2;
-            when BYTE_2 =>
-                MEM_WREN_HAMMING <= '1';
-                MEM_DATA_HAMMING <= "0" & WORD_IN(11 downto 6);
-                HAMMING_WRITER_STATE <= BYTE_3;
-            when BYTE_3 =>
-                MEM_WREN_HAMMING <= '1';
-                MEM_DATA_HAMMING <= "0" & WORD_IN(5 downto 0);
-                HAMMING_WRITER_STATE <= WAIT_FOR_WRITE;
-            when others =>
-            end case;
-        end if;
-    end process;
+    MEM_WREN_OUT <= MEM_WREN;
+    MEM_DATA_OUT <= MEM_DATA;
     
 PAGE_FOUND_LATCH: process(CLK_27_750, RESET)
     begin

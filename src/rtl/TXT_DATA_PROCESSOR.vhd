@@ -302,7 +302,7 @@ MAIN: process(CLK_27_750, RESET)
                         SUBCODE_OUT <= CURRENT_SUBCODE;
                         CONTROL_BITS_OUT <= CURRENT_CONTROL_BITS;
                         FRAME_VALID_OUT <= '1';
-                    elsif BYTE_CLOCK_DELAYED = '1' then
+                    elsif BYTE_CLOCK_DELAYED_2 = '1' then
                         if HAMMING84_VALID = '1' then
                             WORD_OUT <= "00000000000" & "000" & HAMMING84_DECODED;
                         else
@@ -318,13 +318,14 @@ MAIN: process(CLK_27_750, RESET)
                     end if;
                 
                 when HAMMING2418_DATA1 =>
+                    WORD_CLOCK_OUT <= '0';
                     if BYTE_CLOCK_IN = '1' then
                         HAMMING2418_ENCODED(7 downto 0) <= BYTE_IN;
                         PAGE_OUT <= CURRENT_PAGE;
                         SUBCODE_OUT <= CURRENT_SUBCODE;
                         CONTROL_BITS_OUT <= CURRENT_CONTROL_BITS;
                         FRAME_VALID_OUT <= '1';
-                    elsif BYTE_CLOCK_DELAYED = '1' then
+                    elsif BYTE_CLOCK_DELAYED_2 = '1' then
                         RX_BYTE <= HAMMING2418_DATA2;
                     end if;
                 
@@ -335,7 +336,7 @@ MAIN: process(CLK_27_750, RESET)
                         SUBCODE_OUT <= CURRENT_SUBCODE;
                         CONTROL_BITS_OUT <= CURRENT_CONTROL_BITS;
                         FRAME_VALID_OUT <= '1';
-                    elsif BYTE_CLOCK_DELAYED = '1' then
+                    elsif BYTE_CLOCK_DELAYED_2 = '1' then
                         RX_BYTE <= HAMMING2418_DATA3;
                     end if;
                 
@@ -347,13 +348,15 @@ MAIN: process(CLK_27_750, RESET)
                         CONTROL_BITS_OUT <= CURRENT_CONTROL_BITS;
                         FRAME_VALID_OUT <= '1';
                     elsif BYTE_CLOCK_DELAYED = '1' then
-                        if HAMMING84_VALID = '1' then
+                        if HAMMING2418_VALID = '1' then
                             WORD_OUT <= HAMMING2418_DECODED;
                         else
                             WORD_OUT <= (others => '0');
                         end if;
                         WORD_CLOCK_OUT <= '1';
                     elsif BYTE_CLOCK_DELAYED_2 = '1' then
+                        RX_BYTE <= HAMMING2418_DATA1;
+                        WORD_CLOCK_OUT <= '0';
                     else
                         WORD_CLOCK_OUT <= '0';
                     end if;
