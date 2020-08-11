@@ -298,10 +298,10 @@ ENHANCEMENTS_CONTROLLER: process(CLK, RESET)
     end process;
     
     FOREGROUND_CLUT <= CLUT1 when CT_REMAPPING = "011" or CT_REMAPPING = "100" else
-                       CLUT2 when CT_REMAPPING = "101" or CT_REMAPPING = "11X" else
+                       CLUT2 when CT_REMAPPING = "101" or CT_REMAPPING = "110" or CT_REMAPPING = "111" else
                        CLUT0;
-    BACKGROUND_CLUT <= CLUT1 when CT_REMAPPING = "0X1" or CT_REMAPPING = "101" else
-                       CLUT2 when CT_REMAPPING = "010" or CT_REMAPPING = "1X0" else
+    BACKGROUND_CLUT <= CLUT1 when CT_REMAPPING = "001" or CT_REMAPPING = "011" or CT_REMAPPING = "101" else
+                       CLUT2 when CT_REMAPPING = "010" or CT_REMAPPING = "100" or CT_REMAPPING = "110" else
                        CLUT3 when CT_REMAPPING = "111" else
                        CLUT0;
     
