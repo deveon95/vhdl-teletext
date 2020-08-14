@@ -52,6 +52,7 @@ end entity TXT_MEMORY_CONTROLLER;
 architecture RTL of TXT_MEMORY_CONTROLLER is
 
 constant TEXT_COLS : integer := 40;
+constant MEMORY_SIZE : integer := 2048;
 signal MEMORY_ERASE_REQUIRED : std_logic;
 signal VISIBLE_PACKET : std_logic;
 signal PAGE_FOUND     : std_logic;          -- Updated at beginning of packet
@@ -63,8 +64,8 @@ signal STATUS_UPDATED : std_logic;
 signal LAST_LOADED_MAGAZINE : std_logic_vector(2 downto 0);
 signal LAST_LOADED_PAGE : std_logic_vector(7 downto 0);
 signal LAST_LOADED_SUBCODE : std_logic_vector(12 downto 0);
-signal LINE_START_ADDRESS : integer range 0 to 2047;
-signal ADDRESS_COUNTER : integer range 0 to 2047;
+signal LINE_START_ADDRESS : integer range 0 to MEMORY_SIZE - 1;
+signal ADDRESS_COUNTER : integer range 0 to MEMORY_SIZE - 1;
 signal COLUMN_COUNTER : integer range 0 to TEXT_COLS;
 signal ROW_INTEGER : integer range 0 to 31;
 signal DESIGNATION : std_logic_vector(3 downto 0);
@@ -261,7 +262,7 @@ MAIN: process(CLK_27_750, RESET)
                 MEM_WREN <= '1';
                 STATE <= ERASE_MEMORY;
             when ERASE_MEMORY =>
-                if ADDRESS_COUNTER < 1000 then
+                if ADDRESS_COUNTER < MEMORY_SIZE - 1 then
                     ADDRESS_COUNTER <= ADDRESS_COUNTER + 1;
                 else
                     STATE <= WAIT_FOR_FRAME;
@@ -333,10 +334,10 @@ MAIN: process(CLK_27_750, RESET)
                           1726 when ROW_IN = "11010" and DESIGNATION = "1110" else
                           1765 when ROW_IN = "11010" and DESIGNATION = "1111" else
                           1003 when ROW_IN = "11011" else
-                          1024 when ROW_IN = "11100" and DESIGNATION = "0000" else
-                          1063 when ROW_IN = "11100" and DESIGNATION = "0001" else
-                          1102 when ROW_IN = "11100" and DESIGNATION = "0011" else
-                          1141 when ROW_IN = "11100" and DESIGNATION = "0100" else
+                          1024 when ROW_IN = "11100" and DESIGNATION = "0100" else
+                          1063 when ROW_IN = "11100" and DESIGNATION = "0011" else
+                          1102 when ROW_IN = "11100" and DESIGNATION = "0001" else
+                          1141 when ROW_IN = "11100" and DESIGNATION = "0000" else
                           0;
 
     ROW_INTEGER <= to_integer(unsigned(ROW_IN));

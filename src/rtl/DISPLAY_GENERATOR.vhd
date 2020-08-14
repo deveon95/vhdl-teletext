@@ -23,13 +23,13 @@ port (
     MIX_IN : in std_logic;
     AB_EN_IN : in std_logic;
     SIZE_SELECT_IN : in std_logic;
+    LEVEL_2_5_EN_IN : in std_logic;
     
     MEMORY_DATA_IN : in std_logic_vector(6 downto 0);
     MEMORY_ADDRESS_OUT : out std_logic_vector(10 downto 0);
     
     NEW_ROW_IN : in std_logic;
     NEW_SCREEN_IN : in std_logic;
-    LEVEL_2_5_ENABLE_IN : in std_logic;
     
     R_OUT : out std_logic_vector(3 downto 0);
     G_OUT : out std_logic_vector(3 downto 0);
@@ -72,6 +72,7 @@ signal CHAR_COL_COUNTER, CHAR_COL_COUNTER_D : integer range 0 to H_CHAR_SIZE - 1
 signal CHAR_ROW_COUNTER : integer range 0 to V_CHAR_SIZE - 1;
 signal CHAR_ROW_SELECT : integer range 0 to V_CHAR_SIZE - 1;
 signal IN_DISPLAY_AREA : std_logic;
+signal IN_DISPLAY_ROWS : std_logic;
 signal CGROM_LINE : std_logic_vector(4 downto 0);
 signal CHAR_TO_DISPLAY : std_logic_vector(6 downto 0);
 signal NEXT_V_PIXEL : std_logic;
@@ -103,10 +104,12 @@ signal CURRENT_PIXEL : std_logic;
 signal DISP_ATTRIBUTE : std_logic;
 signal SIZE_SELECT : std_logic;
 signal BLACK_BACKGROUND : std_logic;
+signal BLACK_BACKGROUND_D : std_logic;
 signal MIX_SYNCER, MIX_SYNCED : std_logic;
 signal REVEAL_SYNCER, REVEAL_SYNCED : std_logic;
 signal AB_EN_SYNCER, AB_EN_SYNCED : std_logic;
 signal SIZE_SELECT_SYNCER, SIZE_SELECT_SYNCED : std_logic;
+signal LEVEL_2_5_EN_SYNCER, LEVEL_2_5_EN_SYNCED : std_logic;
 -- Needed for some non-compliant services
 signal FOREGROUND_BLACK_ENABLE : std_logic;
 
@@ -126,10 +129,10 @@ signal MEMORY_ADDRESS_LAT : integer range 0 to 2047;
 constant ENHANCEMENTS_START : integer := 1024;
 constant ENHANCEMENTS_END : integer := 1803;
 -- Below constants are relative to ENHANCEMENTS_START
-constant ADDRESS_PACKET_28_0 : integer := 0;
-constant ADDRESS_PACKET_28_1 : integer := 39;
-constant ADDRESS_PACKET_28_3 : integer := 78;
-constant ADDRESS_PACKET_28_4 : integer := 117;
+constant ADDRESS_PACKET_28_4 : integer := 0;
+constant ADDRESS_PACKET_28_3 : integer := 39;
+constant ADDRESS_PACKET_28_1 : integer := 78;
+constant ADDRESS_PACKET_28_0 : integer := 117;
 constant ADDRESS_PACKET_26 : integer := 273;
 -- Extracted Level 2.5 enhancement data
 type COLOUR_ARRAY is array (integer range <>) of std_logic_vector(11 downto 0);
@@ -142,21 +145,22 @@ constant CLUT1_DEFAULT : COLOUR_ARRAY(0 to 7) := ("000000000000", "000000000111"
 constant CLUT2_DEFAULT : COLOUR_ARRAY(0 to 7) := ("010100001111", "000001111111", "011111110000", "101111111111", "101011000000", "000000000101", "001001010110", "011101111100");
 constant CLUT3_DEFAULT : COLOUR_ARRAY(0 to 7) := ("010100001111", "000001111111", "011111110000", "101111111111", "101011000000", "000000000101", "001001010110", "011101111100");
 signal CT_REMAPPING : std_logic_vector(2 downto 0);
-signal DEFAULT_ROW_COLOUR : std_logic_vector(4 downto 0);
-signal DEFAULT_SCREEN_COLOUR : std_logic_vector(4 downto 0);
+signal DEFAULT_ROW_COLOUR_ENTRY : std_logic_vector(4 downto 0);
+signal DEFAULT_SCREEN_COLOUR_ENTRY : std_logic_vector(4 downto 0);
 signal BLACK_BACKGROUND_COLOUR_SUBSTITUTION : std_logic;
 -- Combinational signals
 signal FOREGROUND_CLUT : COLOUR_ARRAY(0 to 7);
 signal BACKGROUND_CLUT : COLOUR_ARRAY(0 to 7);
-
+signal DEFAULT_SCREEN_COLOUR : std_logic_vector(11 downto 0);
+signal DEFAULT_ROW_COLOUR : std_logic_vector(11 downto 0);
 
 begin
 
 ENHANCEMENTS_CONTROLLER: process(CLK, RESET)
     begin
         if RESET = '1' then
-            DEFAULT_ROW_COLOUR <= (others => '0');
-            DEFAULT_SCREEN_COLOUR <= (others => '0');
+            DEFAULT_ROW_COLOUR_ENTRY <= (others => '0');
+            DEFAULT_SCREEN_COLOUR_ENTRY <= (others => '0');
             BLACK_BACKGROUND_COLOUR_SUBSTITUTION <= '0';
             CT_REMAPPING <= (others => '0');
             CLUT0 <= CLUT0_DEFAULT;
@@ -177,10 +181,20 @@ ENHANCEMENTS_CONTROLLER: process(CLK, RESET)
             CONFIGURE_LEVEL_2_5_DATA <= CLEAR_LEVEL_2_5_DATA;
             
             if CLEAR_LEVEL_2_5_DATA = '1' then
+                DEFAULT_ROW_COLOUR_ENTRY <= (others => '0');
+                DEFAULT_SCREEN_COLOUR_ENTRY <= (others => '0');
+                BLACK_BACKGROUND_COLOUR_SUBSTITUTION <= '0';
+                CT_REMAPPING <= (others => '0');
+                CLUT0 <= CLUT0_DEFAULT;
+                CLUT1 <= CLUT1_DEFAULT;
+                CLUT2 <= CLUT2_DEFAULT;
+                CLUT3 <= CLUT3_DEFAULT;
+                MEMORY_ADDRESS <= 0;
+                PROCESSING_ENHANCEMENTS <= '0';
                 CONFIGURE_LEVEL_2_5_DATA_DONE <= '0';
             end if;
                 
-            if LEVEL_2_5_ENABLE_IN = '1' and CONFIGURE_LEVEL_2_5_DATA_DONE = '0' then
+            if LEVEL_2_5_EN_SYNCED = '1' and CONFIGURE_LEVEL_2_5_DATA_DONE = '0' then
                 if CONFIGURE_LEVEL_2_5_DATA = '1' then
                     MEMORY_ADDRESS <= ENHANCEMENTS_START;
                     PROCESSING_ENHANCEMENTS <= '1';
@@ -189,6 +203,10 @@ ENHANCEMENTS_CONTROLLER: process(CLK, RESET)
                     PROCESSING_ENHANCEMENTS <= '0';
                 elsif MEMORY_DATA_IN(6) = '1' then
                     -- MEMORY_DATA_IN(6) is set if a valid packet has been written to RAM by the Memory Controller
+                    -- In the case of settings where multiple packets can set the same thing but a particular packet has priority, the packet
+                    -- with priority needs to be written to the highest address by the memory controller so that its data overwrites data from
+                    -- the lower priority packets which are read out first.
+                    
                     -- Case statement for storing the configuration
                     -- Remember that the Memory Controller reverses the data order, so bit 18 is address 0 bit 5 and bit 1 is address 2 bit 0
                     case MEMORY_ADDRESS_LAT is
@@ -274,12 +292,102 @@ ENHANCEMENTS_CONTROLLER: process(CLK, RESET)
                         CLUT3(7)(7 downto 2) <= MEMORY_DATA_IN(5 downto 0);
                     when ENHANCEMENTS_START + ADDRESS_PACKET_28_0 + 38 =>
                         CLUT3(7)(11 downto 8) <= MEMORY_DATA_IN(3 downto 0);
-                        DEFAULT_SCREEN_COLOUR(1 downto 0) <= MEMORY_DATA_IN(5 downto 4);
+                        DEFAULT_SCREEN_COLOUR_ENTRY(1 downto 0) <= MEMORY_DATA_IN(5 downto 4);
                     when ENHANCEMENTS_START + ADDRESS_PACKET_28_0 + 37 =>
-                        DEFAULT_SCREEN_COLOUR(4 downto 2) <= MEMORY_DATA_IN(2 downto 0);
-                        DEFAULT_ROW_COLOUR(2 downto 0) <= MEMORY_DATA_IN(5 downto 3);
+                        DEFAULT_SCREEN_COLOUR_ENTRY(4 downto 2) <= MEMORY_DATA_IN(2 downto 0);
+                        DEFAULT_ROW_COLOUR_ENTRY(2 downto 0) <= MEMORY_DATA_IN(5 downto 3);
                     when ENHANCEMENTS_START + ADDRESS_PACKET_28_0 + 36 =>
-                        DEFAULT_ROW_COLOUR(4 downto 3) <= MEMORY_DATA_IN(1 downto 0);
+                        DEFAULT_ROW_COLOUR_ENTRY(4 downto 3) <= MEMORY_DATA_IN(1 downto 0);
+                        BLACK_BACKGROUND_COLOUR_SUBSTITUTION <= MEMORY_DATA_IN(2);
+                        CT_REMAPPING <= MEMORY_DATA_IN(5 downto 3);
+                        
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 4 =>
+                        CLUT0(0)(1 downto 0) <= MEMORY_DATA_IN(5 downto 4);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 3 =>
+                        CLUT0(0)(7 downto 2) <= MEMORY_DATA_IN(5 downto 0);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 8 =>
+                        CLUT0(0)(11 downto 8) <= MEMORY_DATA_IN(3 downto 0);
+                        CLUT0(1)(1 downto 0) <= MEMORY_DATA_IN(5 downto 4);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 7 =>
+                        CLUT0(1)(7 downto 2) <= MEMORY_DATA_IN(5 downto 0);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 6 =>
+                        CLUT0(1)(11 downto 8) <= MEMORY_DATA_IN(3 downto 0);
+                        CLUT0(2)(1 downto 0) <= MEMORY_DATA_IN(5 downto 4);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 11 =>
+                        CLUT0(2)(7 downto 2) <= MEMORY_DATA_IN(5 downto 0);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 10 =>
+                        CLUT0(2)(11 downto 8) <= MEMORY_DATA_IN(3 downto 0);
+                        CLUT0(3)(1 downto 0) <= MEMORY_DATA_IN(5 downto 4);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 9 =>
+                        CLUT0(3)(7 downto 2) <= MEMORY_DATA_IN(5 downto 0);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 14 =>
+                        CLUT0(3)(11 downto 8) <= MEMORY_DATA_IN(3 downto 0);
+                        CLUT0(4)(1 downto 0) <= MEMORY_DATA_IN(5 downto 4);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 13 =>
+                        CLUT0(4)(7 downto 2) <= MEMORY_DATA_IN(5 downto 0);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 12 =>
+                        CLUT0(4)(11 downto 8) <= MEMORY_DATA_IN(3 downto 0);
+                        CLUT0(5)(1 downto 0) <= MEMORY_DATA_IN(5 downto 4);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 17 =>
+                        CLUT0(5)(7 downto 2) <= MEMORY_DATA_IN(5 downto 0);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 16 =>
+                        CLUT0(5)(11 downto 8) <= MEMORY_DATA_IN(3 downto 0);
+                        CLUT0(6)(1 downto 0) <= MEMORY_DATA_IN(5 downto 4);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 15 =>
+                        CLUT0(6)(7 downto 2) <= MEMORY_DATA_IN(5 downto 0);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 20 =>
+                        CLUT0(6)(11 downto 8) <= MEMORY_DATA_IN(3 downto 0);
+                        CLUT0(7)(1 downto 0) <= MEMORY_DATA_IN(5 downto 4);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 19 =>
+                        CLUT0(7)(7 downto 2) <= MEMORY_DATA_IN(5 downto 0);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 18 =>
+                        CLUT0(7)(11 downto 8) <= MEMORY_DATA_IN(3 downto 0);
+                        CLUT1(0)(1 downto 0) <= MEMORY_DATA_IN(5 downto 4);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 23 =>
+                        CLUT1(0)(7 downto 2) <= MEMORY_DATA_IN(5 downto 0);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 22 =>
+                        CLUT1(0)(11 downto 8) <= MEMORY_DATA_IN(3 downto 0);
+                        CLUT1(1)(1 downto 0) <= MEMORY_DATA_IN(5 downto 4);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 21 =>
+                        CLUT1(1)(7 downto 2) <= MEMORY_DATA_IN(5 downto 0);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 26 =>
+                        CLUT1(1)(11 downto 8) <= MEMORY_DATA_IN(3 downto 0);
+                        CLUT1(2)(1 downto 0) <= MEMORY_DATA_IN(5 downto 4);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 25 =>
+                        CLUT1(2)(7 downto 2) <= MEMORY_DATA_IN(5 downto 0);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 24 =>
+                        CLUT1(2)(11 downto 8) <= MEMORY_DATA_IN(3 downto 0);
+                        CLUT1(3)(1 downto 0) <= MEMORY_DATA_IN(5 downto 4);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 29 =>
+                        CLUT1(3)(7 downto 2) <= MEMORY_DATA_IN(5 downto 0);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 28 =>
+                        CLUT1(3)(11 downto 8) <= MEMORY_DATA_IN(3 downto 0);
+                        CLUT1(4)(1 downto 0) <= MEMORY_DATA_IN(5 downto 4);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 27 =>
+                        CLUT1(4)(7 downto 2) <= MEMORY_DATA_IN(5 downto 0);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 32 =>
+                        CLUT1(4)(11 downto 8) <= MEMORY_DATA_IN(3 downto 0);
+                        CLUT1(5)(1 downto 0) <= MEMORY_DATA_IN(5 downto 4);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 31 =>
+                        CLUT1(5)(7 downto 2) <= MEMORY_DATA_IN(5 downto 0);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 30 =>
+                        CLUT1(5)(11 downto 8) <= MEMORY_DATA_IN(3 downto 0);
+                        CLUT1(6)(1 downto 0) <= MEMORY_DATA_IN(5 downto 4);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 35 =>
+                        CLUT1(6)(7 downto 2) <= MEMORY_DATA_IN(5 downto 0);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 34 =>
+                        CLUT1(6)(11 downto 8) <= MEMORY_DATA_IN(3 downto 0);
+                        CLUT1(7)(1 downto 0) <= MEMORY_DATA_IN(5 downto 4);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 33 =>
+                        CLUT1(7)(7 downto 2) <= MEMORY_DATA_IN(5 downto 0);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 38 =>
+                        CLUT1(7)(11 downto 8) <= MEMORY_DATA_IN(3 downto 0);
+                        DEFAULT_SCREEN_COLOUR_ENTRY(1 downto 0) <= MEMORY_DATA_IN(5 downto 4);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 37 =>
+                        DEFAULT_SCREEN_COLOUR_ENTRY(4 downto 2) <= MEMORY_DATA_IN(2 downto 0);
+                        DEFAULT_ROW_COLOUR_ENTRY(2 downto 0) <= MEMORY_DATA_IN(5 downto 3);
+                    when ENHANCEMENTS_START + ADDRESS_PACKET_28_4 + 36 =>
+                        DEFAULT_ROW_COLOUR_ENTRY(4 downto 3) <= MEMORY_DATA_IN(1 downto 0);
                         BLACK_BACKGROUND_COLOUR_SUBSTITUTION <= MEMORY_DATA_IN(2);
                         CT_REMAPPING <= MEMORY_DATA_IN(5 downto 3);
                         
@@ -304,6 +412,16 @@ ENHANCEMENTS_CONTROLLER: process(CLK, RESET)
                        CLUT2 when CT_REMAPPING = "010" or CT_REMAPPING = "100" or CT_REMAPPING = "110" else
                        CLUT3 when CT_REMAPPING = "111" else
                        CLUT0;
+    
+    DEFAULT_SCREEN_COLOUR <= CLUT0(to_integer(unsigned(DEFAULT_SCREEN_COLOUR_ENTRY(2 downto 0)))) when DEFAULT_SCREEN_COLOUR_ENTRY(4 downto 3) = "00" else
+                             CLUT1(to_integer(unsigned(DEFAULT_SCREEN_COLOUR_ENTRY(2 downto 0)))) when DEFAULT_SCREEN_COLOUR_ENTRY(4 downto 3) = "01" else
+                             CLUT2(to_integer(unsigned(DEFAULT_SCREEN_COLOUR_ENTRY(2 downto 0)))) when DEFAULT_SCREEN_COLOUR_ENTRY(4 downto 3) = "10" else
+                             CLUT3(to_integer(unsigned(DEFAULT_SCREEN_COLOUR_ENTRY(2 downto 0))));
+    
+    DEFAULT_ROW_COLOUR <= CLUT0(to_integer(unsigned(DEFAULT_ROW_COLOUR_ENTRY(2 downto 0)))) when DEFAULT_ROW_COLOUR_ENTRY(4 downto 3) = "00" else
+                          CLUT1(to_integer(unsigned(DEFAULT_ROW_COLOUR_ENTRY(2 downto 0)))) when DEFAULT_ROW_COLOUR_ENTRY(4 downto 3) = "01" else
+                          CLUT2(to_integer(unsigned(DEFAULT_ROW_COLOUR_ENTRY(2 downto 0)))) when DEFAULT_ROW_COLOUR_ENTRY(4 downto 3) = "10" else
+                          CLUT3(to_integer(unsigned(DEFAULT_ROW_COLOUR_ENTRY(2 downto 0))));
     
     -- Read from previous row when last line was double height
     MEMORY_ADDRESS_OUT <= std_logic_vector(to_unsigned(CHAR_COUNTER,11)) when DH_LAST_ROW = '0' and PROCESSING_ENHANCEMENTS = '0' else
@@ -404,6 +522,7 @@ ACTIVE_AREA_CONTROLLER: process(CLK, RESET)
     end process;
     
     IN_DISPLAY_AREA <= '1' when (ROW_COUNTER >= DISPLAY_AREA_1_TOP and ROW_COUNTER < DISPLAY_AREA_1_BOTTOM and PIXEL_COUNTER >= DISPLAY_AREA_1_LEFT and PIXEL_COUNTER < DISPLAY_AREA_1_RIGHT and SIZE_SELECT = '0') or (ROW_COUNTER >= DISPLAY_AREA_2_TOP and ROW_COUNTER < DISPLAY_AREA_2_BOTTOM and PIXEL_COUNTER >= DISPLAY_AREA_2_LEFT and PIXEL_COUNTER < DISPLAY_AREA_2_RIGHT and SIZE_SELECT = '1') else '0';
+    IN_DISPLAY_ROWS <= '1' when (ROW_COUNTER >= DISPLAY_AREA_1_TOP and ROW_COUNTER < DISPLAY_AREA_1_BOTTOM and SIZE_SELECT = '0') or (ROW_COUNTER >= DISPLAY_AREA_2_TOP and ROW_COUNTER < DISPLAY_AREA_2_BOTTOM and SIZE_SELECT = '1') else '0';
     NEXT_H_PIXEL <= '1' when IN_DISPLAY_AREA = '1' and H_PIXEL_STRETCH_COUNTER = 0 else '0';
     
     
@@ -446,9 +565,11 @@ DISPLAY_GEN: process(CLK, RESET)
             CHAR_COL_COUNTER_D <= CHAR_COL_COUNTER;
             FG_COLOUR_D <= FG_COLOUR;
             BG_COLOUR_D <= BG_COLOUR;
+            BLACK_BACKGROUND_D <= BLACK_BACKGROUND;
             MIX_SYNCER <= MIX_IN;
             REVEAL_SYNCER <= REVEAL_IN;
             AB_EN_SYNCER <= AB_EN_IN;
+            LEVEL_2_5_EN_SYNCER <= LEVEL_2_5_EN_IN;
             SIZE_SELECT_SYNCER <= SIZE_SELECT_IN;
             SIZE_SELECT_SYNCED <= SIZE_SELECT_SYNCER;
             
@@ -465,6 +586,7 @@ DISPLAY_GEN: process(CLK, RESET)
                 MIX_SYNCED <= MIX_SYNCER;
                 REVEAL_SYNCED <= REVEAL_SYNCER;
                 AB_EN_SYNCED <= AB_EN_SYNCER;
+                LEVEL_2_5_EN_SYNCED <= LEVEL_2_5_EN_SYNCER;
             end if;
             
             if NEW_ROW_IN = '1' and NEXT_V_PIXEL = '1' then
@@ -612,6 +734,7 @@ DISPLAY_GEN: process(CLK, RESET)
                 MOSAIC_HOLD <= '0';
                 NEXT_MOSAIC_HOLD <= '0';
                 BLACK_BACKGROUND <= '1';
+                BLACK_BACKGROUND_D <= '1';
                 CONCEAL <= '0';
                 NEXT_CONCEAL <= '0';
                 FLASH <= '0';
@@ -626,13 +749,19 @@ DISPLAY_GEN: process(CLK, RESET)
     
     
     -- Add black background colour substitution stuff
-    R_OUT <= FOREGROUND_CLUT(to_integer(unsigned(FG_COLOUR_D)))(3 downto 0) when (CURRENT_PIXEL AND DISP_ATTRIBUTE) = '1' else 
+    R_OUT <= DEFAULT_SCREEN_COLOUR(3 downto 0) when IN_DISPLAY_ROWS = '0' and MIX_SYNCED = '0' else
+             FOREGROUND_CLUT(to_integer(unsigned(FG_COLOUR_D)))(3 downto 0) when (CURRENT_PIXEL AND DISP_ATTRIBUTE) = '1' else
+             DEFAULT_ROW_COLOUR(3 downto 0) when BLACK_BACKGROUND_D = '1' and MIX_SYNCED = '0' else
              BACKGROUND_CLUT(to_integer(unsigned(BG_COLOUR_D)))(3 downto 0) when MIX_SYNCED = '0' else
              "0000";
-    G_OUT <= FOREGROUND_CLUT(to_integer(unsigned(FG_COLOUR_D)))(7 downto 4) when (CURRENT_PIXEL AND DISP_ATTRIBUTE) = '1' else 
+    G_OUT <= DEFAULT_SCREEN_COLOUR(7 downto 4) when IN_DISPLAY_ROWS = '0' and MIX_SYNCED = '0' else
+             FOREGROUND_CLUT(to_integer(unsigned(FG_COLOUR_D)))(7 downto 4) when (CURRENT_PIXEL AND DISP_ATTRIBUTE) = '1' else 
+             DEFAULT_ROW_COLOUR(7 downto 4) when BLACK_BACKGROUND_D = '1' and MIX_SYNCED = '0' else
              BACKGROUND_CLUT(to_integer(unsigned(BG_COLOUR_D)))(7 downto 4) when MIX_SYNCED = '0' else
              "0000";
-    B_OUT <= FOREGROUND_CLUT(to_integer(unsigned(FG_COLOUR_D)))(11 downto 8) when (CURRENT_PIXEL AND DISP_ATTRIBUTE) = '1' else 
+    B_OUT <= DEFAULT_SCREEN_COLOUR(11 downto 8) when IN_DISPLAY_ROWS = '0' and MIX_SYNCED = '0' else
+             FOREGROUND_CLUT(to_integer(unsigned(FG_COLOUR_D)))(11 downto 8) when (CURRENT_PIXEL AND DISP_ATTRIBUTE) = '1' else 
+             DEFAULT_ROW_COLOUR(11 downto 8) when BLACK_BACKGROUND_D = '1' and MIX_SYNCED = '0' else
              BACKGROUND_CLUT(to_integer(unsigned(BG_COLOUR_D)))(11 downto 8) when MIX_SYNCED = '0' else
              "0000";
     
