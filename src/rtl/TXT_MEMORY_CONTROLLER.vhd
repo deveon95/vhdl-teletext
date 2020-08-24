@@ -173,11 +173,13 @@ MAIN: process(CLK_27_750, RESET)
                     -- Packet X/26 has a Hamming 8/4 coded designation code and the data is all Hamming 24/18 encoded
                     elsif ROW_INTEGER = 26 then
                         DESIGNATION <= WORD_IN(3 downto 0);
-                        case ADDRESS_COUNTER is
+                        case COLUMN_COUNTER is
                         when 0 => if WORD_IN(6 downto 4) /= "000" then STATE <= IGNORE_FRAME; end if;
                         when 1 =>
                             ADDRESS_COUNTER <= LINE_START_ADDRESS;
                             STATE <= HAMMING2418_1A;
+                        when 40 =>
+                            STATE <= IGNORE_FRAME;
                         when others =>
                             STATE <= HAMMING2418_1A;
                         end case;

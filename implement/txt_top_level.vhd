@@ -171,6 +171,7 @@ signal AB_ENABLE : std_logic;
 signal REFRESH_RATE_SELECT : std_logic;
 signal RESOLUTION_SELECT : std_logic;
 signal LEVEL_2_5_ENABLE : std_logic;
+signal LEVEL_2_5_CLEAR_EN : std_logic;
 signal MIX_LAST  : std_logic;
 signal SUBPAGE_LAST  : std_logic;
 signal REVEAL_LAST  : std_logic;
@@ -540,6 +541,7 @@ KEYPAD_CONTROLLER: entity work.KEYPAD
     RESOLUTION_SELECT <= KEYPAD_BUTTONS(13);
     REFRESH_RATE_SELECT <= KEYPAD_BUTTONS(14);
     LEVEL_2_5_ENABLE <= KEYPAD_BUTTONS(15);
+    LEVEL_2_5_CLEAR_EN <= KEYPAD_BUTTONS(12);
 
 MEMORY_CONTROLLER: entity work.TXT_MEMORY_CONTROLLER
     port map(
@@ -607,6 +609,7 @@ DISPLAY_GENERATOR: entity work.DISPLAY_GENERATOR
     AB_EN_IN => AB_ENABLE,
     SIZE_SELECT_IN => RESOLUTION_SELECT,
     LEVEL_2_5_EN_IN => LEVEL_2_5_ENABLE,
+    LEVEL_2_5_CLEAR_EN_IN => LEVEL_2_5_CLEAR_EN,
     
     NEW_ROW_IN => NEW_ROW,
     NEW_SCREEN_IN => NEW_SCREEN,
