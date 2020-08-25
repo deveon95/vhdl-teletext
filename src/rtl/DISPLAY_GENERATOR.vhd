@@ -161,6 +161,8 @@ type COLOUR_ENTRY_ARRAY is array (integer range <>) of std_logic_vector(4 downto
 signal FULL_SCREEN_COLOUR : std_logic_vector(4 downto 0);
 signal FULL_SCREEN_COLOUR_ENABLE : std_logic;                                   -- 1 when enhancement triplet received and S1 = 0 and S0 = 0
 signal FULL_ROW_COLOURS : COLOUR_ENTRY_ARRAY(0 to 23);
+signal FULL_ROW_COLOUR_LAST : std_logic_vector(11 downto 0);
+signal FULL_ROW_COLOUR_PERSIST_LAST : std_logic;
 signal FULL_ROW_COLOURS_ENABLE : std_logic_vector(23 downto 0);                 -- 1 when enhancement triplet received for this row and S1 = S0
 signal FULL_ROW_COLOURS_PERSIST : std_logic_vector(23 downto 0);                -- 1 when S1 = 1 and S0 = 1
 signal CURRENT_BYTE_OF_TRIPLET : integer range 0 to 2;
@@ -494,7 +496,15 @@ ENHANCEMENTS_CONTROLLER: process(CLK, RESET)
                              CLUT2(to_integer(unsigned(DEFAULT_SCREEN_COLOUR_ENTRY(2 downto 0)))) when DEFAULT_SCREEN_COLOUR_ENTRY(4 downto 3) = "10" else
                              CLUT3(to_integer(unsigned(DEFAULT_SCREEN_COLOUR_ENTRY(2 downto 0))));
     
+    FULL_ROW_COLOUR_LAST <= FULL_ROW_COLOUR_THIS_LINE when FULL_ROW_COLOURS_ENABLE(CHAR_LINE_COUNTER) = '1' else FULL_ROW_COLOUR_LAST;
+    
+    FULL_ROW_COLOUR_PERSIST_LAST <= '0' when CLEAR_LEVEL_2_5_DATA = '1' else
+                                    '1' when FULL_ROW_COLOURS_PERSIST(CHAR_LINE_COUNTER) = '1' else
+                                    '0' when (FULL_ROW_COLOURS_PERSIST(CHAR_LINE_COUNTER) = '0' and FULL_ROW_COLOURS_ENABLE(CHAR_LINE_COUNTER) = '1') else
+                                    FULL_ROW_COLOUR_PERSIST_LAST;
+    
     DEFAULT_ROW_COLOUR <= FULL_ROW_COLOUR_THIS_LINE when FULL_ROW_COLOURS_ENABLE(CHAR_LINE_COUNTER) = '1' else
+                          FULL_ROW_COLOUR_LAST when FULL_ROW_COLOUR_PERSIST_LAST = '1' else
                           CLUT0(to_integer(unsigned(DEFAULT_ROW_COLOUR_ENTRY(2 downto 0)))) when DEFAULT_ROW_COLOUR_ENTRY(4 downto 3) = "00" else
                           CLUT1(to_integer(unsigned(DEFAULT_ROW_COLOUR_ENTRY(2 downto 0)))) when DEFAULT_ROW_COLOUR_ENTRY(4 downto 3) = "01" else
                           CLUT2(to_integer(unsigned(DEFAULT_ROW_COLOUR_ENTRY(2 downto 0)))) when DEFAULT_ROW_COLOUR_ENTRY(4 downto 3) = "10" else

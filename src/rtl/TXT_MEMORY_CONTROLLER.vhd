@@ -166,6 +166,8 @@ MAIN: process(CLK_27_750, RESET)
                         when 1 =>
                             ADDRESS_COUNTER <= LINE_START_ADDRESS;
                             STATE <= HAMMING2418_1A;
+                        when 40 =>
+                            STATE <= IGNORE_FRAME;
                         when others =>
                             STATE <= HAMMING2418_1A;
                         end case;
