@@ -496,12 +496,22 @@ ENHANCEMENTS_CONTROLLER: process(CLK, RESET)
                              CLUT2(to_integer(unsigned(DEFAULT_SCREEN_COLOUR_ENTRY(2 downto 0)))) when DEFAULT_SCREEN_COLOUR_ENTRY(4 downto 3) = "10" else
                              CLUT3(to_integer(unsigned(DEFAULT_SCREEN_COLOUR_ENTRY(2 downto 0))));
     
-    FULL_ROW_COLOUR_LAST <= FULL_ROW_COLOUR_THIS_LINE when FULL_ROW_COLOURS_ENABLE(CHAR_LINE_COUNTER) = '1' else FULL_ROW_COLOUR_LAST;
+FULL_ROW_COLOUR_PROCESS: process(CLK, RESET)
+    begin
+        if RESET = '1' then
+            FULL_ROW_COLOUR_PERSIST_LAST <= '0';
+            FULL_ROW_COLOUR_LAST <= (others => '0');
+        elsif rising_edge(CLK) then
+            if CLEAR_LEVEL_2_5_DATA = '1' then
+                FULL_ROW_COLOUR_PERSIST_LAST <= '0';
+                FULL_ROW_COLOUR_LAST <= (others => '0');
+            elsif FULL_ROW_COLOURS_ENABLE(CHAR_LINE_COUNTER) = '1' then
+                FULL_ROW_COLOUR_PERSIST_LAST <= FULL_ROW_COLOURS_PERSIST(CHAR_LINE_COUNTER);
+                FULL_ROW_COLOUR_LAST <= FULL_ROW_COLOUR_THIS_LINE;
+            end if;
+        end if;
+    end process;
     
-    FULL_ROW_COLOUR_PERSIST_LAST <= '0' when CLEAR_LEVEL_2_5_DATA = '1' else
-                                    '1' when FULL_ROW_COLOURS_PERSIST(CHAR_LINE_COUNTER) = '1' else
-                                    '0' when (FULL_ROW_COLOURS_PERSIST(CHAR_LINE_COUNTER) = '0' and FULL_ROW_COLOURS_ENABLE(CHAR_LINE_COUNTER) = '1') else
-                                    FULL_ROW_COLOUR_PERSIST_LAST;
     
     DEFAULT_ROW_COLOUR <= FULL_ROW_COLOUR_THIS_LINE when FULL_ROW_COLOURS_ENABLE(CHAR_LINE_COUNTER) = '1' else
                           FULL_ROW_COLOUR_LAST when FULL_ROW_COLOUR_PERSIST_LAST = '1' else
