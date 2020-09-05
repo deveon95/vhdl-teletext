@@ -3,6 +3,7 @@
 A teletext decoder and display generator in VHDL for FPGAs.
 
 * Level 1.0 decoding and display
+* Selected Level 2.5 and Level 3.5 display features implemented
 * No vendor-specific code (except dual port RAM, PLL and high-speed I/O buffers)
 * Multiple screen resolutions supported
 * Small logic size
