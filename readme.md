@@ -10,6 +10,8 @@ A teletext decoder and display generator in VHDL for FPGAs.
 * Vunit for unit tests (testbenches only completed for some modules so far)
 * HDMI output (originally VGA)
 
+[Click here to buy the VHDL Teletext PCB on Tindie (fully assembled)](https://www.tindie.com/products/nickelec/fpga-teletext-decoder/) - ships from the UK - please remember that this is a very low volume product so I cannot achieve the low pricing of high-volume consumer gear.
+
 # RTL block diagram
 
 ![Block diagram](docs/images/rtl-diagram-shadow.png)
