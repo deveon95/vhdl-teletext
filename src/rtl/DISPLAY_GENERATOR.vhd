@@ -157,6 +157,8 @@ signal DEFAULT_ROW_COLOUR_ENTRY : std_logic_vector(4 downto 0);
 signal DEFAULT_SCREEN_COLOUR_ENTRY : std_logic_vector(4 downto 0);
 signal BLACK_BACKGROUND_COLOUR_SUBSTITUTION : std_logic;
 -- Packet 26
+signal ACTIVE_ROW : integer range 0 to 23;
+signal ACTIVE_COLUMN : integer range 0 to 39;
 type COLOUR_ENTRY_ARRAY is array (integer range <>) of std_logic_vector(4 downto 0);
 signal FULL_SCREEN_COLOUR : std_logic_vector(4 downto 0);
 signal FULL_SCREEN_COLOUR_ENABLE : std_logic;                                   -- 1 when enhancement triplet received and S1 = 0 and S0 = 0
@@ -170,6 +172,8 @@ signal TRIPLET_MODE : std_logic_vector(4 downto 0);
 signal TRIPLET_DATA : std_logic_vector(6 downto 0);
 signal FULL_ROW_COLOUR_ENTRY_THIS_LINE : std_logic_vector(4 downto 0);
 signal FULL_ROW_COLOUR_THIS_LINE : std_logic_vector(11 downto 0);
+signal FOREGROUND_COLOURS : COLOUR_ENTRY_ARRAY(0 to TEXT_LINES * TEXT_COLS - 1);
+signal FOREGROUND_COLOURS_ENABLE : std_logic_vector(0 to TEXT_LINES * TEXT_COLS - 1);
 -- Combinational signals
 signal FOREGROUND_CLUT : COLOUR_ARRAY(0 to 7);
 signal BACKGROUND_CLUT : COLOUR_ARRAY(0 to 7);
@@ -181,6 +185,10 @@ begin
 ENHANCEMENTS_CONTROLLER: process(CLK, RESET)
     begin
         if RESET = '1' then
+            FOREGROUND_COLOURS <= (others => (others => '0'));
+            FOREGROUND_COLOURS_ENABLE <= (others => '0');
+            ACTIVE_ROW <= 0;
+            ACTIVE_COLUMN <= 0;
             DEFAULT_ROW_COLOUR_ENTRY <= (others => '0');
             DEFAULT_SCREEN_COLOUR_ENTRY <= (others => '0');
             BLACK_BACKGROUND_COLOUR_SUBSTITUTION <= '0';
@@ -210,6 +218,10 @@ ENHANCEMENTS_CONTROLLER: process(CLK, RESET)
             
             if CLEAR_LEVEL_2_5_DATA = '1' then
                 if LEVEL_2_5_CLEAR_EN_SYNCED = '1' then
+                    FOREGROUND_COLOURS <= (others => (others => '0'));
+                    FOREGROUND_COLOURS_ENABLE <= (others => '0');
+                    ACTIVE_ROW <= 0;
+                    ACTIVE_COLUMN <= 0;
                     DEFAULT_ROW_COLOUR_ENTRY <= (others => '0');
                     DEFAULT_SCREEN_COLOUR_ENTRY <= (others => '0');
                     BLACK_BACKGROUND_COLOUR_SUBSTITUTION <= '0';
@@ -261,6 +273,7 @@ ENHANCEMENTS_CONTROLLER: process(CLK, RESET)
                             -- The Triplet Mode and Triplet Address (in MEMORY_DATA_IN) determines what happens to the mode and data
                             -- 
                             if to_integer(unsigned(MEMORY_DATA_IN(5 downto 0))) >= 40 then
+                                -- Column commands
                                 case TRIPLET_MODE is
                                 when "00000" =>
                                     -- Set Full Screen Colour (Address not used)
@@ -268,9 +281,31 @@ ENHANCEMENTS_CONTROLLER: process(CLK, RESET)
                                     FULL_SCREEN_COLOUR_ENABLE <= (not TRIPLET_DATA(5)) and (not TRIPLET_DATA(6));
                                 when "00001" =>
                                     -- Set Full Row Colour
+                                    ACTIVE_COLUMN <= 0;
                                     FULL_ROW_COLOURS(to_integer(unsigned(MEMORY_DATA_IN(5 downto 0))) - 40) <= TRIPLET_DATA(4 downto 0);
                                     FULL_ROW_COLOURS_ENABLE(to_integer(unsigned(MEMORY_DATA_IN(5 downto 0))) - 40) <= TRIPLET_DATA(5) xnor TRIPLET_DATA(6);
                                     FULL_ROW_COLOURS_PERSIST(to_integer(unsigned(MEMORY_DATA_IN(5 downto 0))) - 40) <= TRIPLET_DATA(5) and TRIPLET_DATA(6);
+                                when "00100" =>
+                                    -- Set Active Position
+                                    ACTIVE_ROW <= to_integer(unsigned(MEMORY_DATA_IN(5 downto 0))) - 40;
+                                    ACTIVE_COLUMN <= to_integer(unsigned(TRIPLET_DATA));
+                                when "00111" =>
+                                    -- Address Display Row 0
+                                    ACTIVE_ROW <= 0;
+                                    ACTIVE_COLUMN <= 0;
+                                    FULL_ROW_COLOURS(0) <= TRIPLET_DATA(4 downto 0);
+                                    FULL_ROW_COLOURS_ENABLE(0) <= TRIPLET_DATA(5) xnor TRIPLET_DATA(6);
+                                    FULL_ROW_COLOURS_PERSIST(0) <= TRIPLET_DATA(5) and TRIPLET_DATA(6);
+                                when others =>
+                                end case;
+                            else
+                                -- Row commands
+                                case TRIPLET_MODE is
+                                when "00000" =>
+                                    -- Non-spacing Foreground Colou
+                                    FOREGROUND_COLOURS(ACTIVE_ROW * TEXT_COLS + to_integer(unsigned(MEMORY_DATA_IN(5 downto 0)))) <= TRIPLET_DATA(4 downto 0);
+                                    FOREGROUND_COLOURS_ENABLE(ACTIVE_ROW * TEXT_COLS + to_integer(unsigned(MEMORY_DATA_IN(5 downto 0)))) <= '1';
+                                    ACTIVE_COLUMN <= to_integer(unsigned(MEMORY_DATA_IN(5 downto 0)));
                                 when others =>
                                 end case;
                             end if;
@@ -785,6 +820,18 @@ DISPLAY_GEN: process(CLK, RESET)
                             CHAR_TO_DISPLAY <= BLANK_CHAR;
                         end if;
                     end case;
+                    
+                    if FOREGROUND_COLOURS_ENABLE(CHAR_COUNTER) = '1' then
+                        if FOREGROUND_COLOURS(CHAR_COUNTER)(4 downto 3) = "00" then
+                            FG_COLOUR <= CLUT0(to_integer(unsigned(FOREGROUND_COLOURS(CHAR_COUNTER)(2 downto 0))));
+                        elsif FOREGROUND_COLOURS(CHAR_COUNTER)(4 downto 3) = "01" then
+                            FG_COLOUR <= CLUT1(to_integer(unsigned(FOREGROUND_COLOURS(CHAR_COUNTER)(2 downto 0))));
+                        elsif FOREGROUND_COLOURS(CHAR_COUNTER)(4 downto 3) = "10" then
+                            FG_COLOUR <= CLUT2(to_integer(unsigned(FOREGROUND_COLOURS(CHAR_COUNTER)(2 downto 0))));
+                        elsif FOREGROUND_COLOURS(CHAR_COUNTER)(4 downto 3) = "11" then
+                            FG_COLOUR <= CLUT3(to_integer(unsigned(FOREGROUND_COLOURS(CHAR_COUNTER)(2 downto 0))));
+                        end if;
+                    end if;
                 else
                     CHAR_COL_COUNTER <= CHAR_COL_COUNTER + 1;
                 end if;
