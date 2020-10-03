@@ -8,7 +8,7 @@ A teletext decoder and display generator in VHDL for FPGAs.
 * Multiple screen resolutions supported
 * Small logic size
 * Vunit for unit tests (testbenches only completed for some modules so far)
-* HDMI output (originally VGA)
+* HDMI output
 
 [Click here to buy the VHDL Teletext PCB on Tindie (fully assembled)](https://www.tindie.com/products/nickelec/fpga-teletext-decoder/) - ships from the UK - please remember that this is a very low volume product so I cannot achieve the low pricing of high-volume consumer gear.
 
@@ -23,6 +23,8 @@ The design runs on the FPGA Teletext board. The PCB includes all the hardware ne
 ![FPGA Teletext PCB](docs/images/fpga-pcb.jpg)
 
 Two oscillators are required for the design: one at 27.750 MHz for teletext decoding and one at whatever frequency is required for the HDMI resolution selected using the DIP switches. The FPGA internal oscillator is used to clock the programmable oscillator controller, required because the programmable oscillator does not generate useful clock frequencies until programmed.
+
+The leftmost DIP switch operates the enhancement data hold function and should normally be left in the up position. When in the up position, enhancement data will be treated as normal. When in the down position, enhancement data will be retained when switching to a different page without enhancement data, allowing enhancements (such as Level 2.5/3.5 colour mapping) to be used on pages that do not originally have these enhancements.
 
 # Programming the FPGA
 

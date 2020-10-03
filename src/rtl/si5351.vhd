@@ -16,7 +16,6 @@ entity SI5351 is
     SDA_OUT                 : out std_logic;
     SCL_OUT                 : out std_logic;
     SDA_IN                  : in  std_logic;
-    SCL_IN                  : in  std_logic;
     REFRESH_RATE_SELECT_IN  : in  std_logic;
     RESOLUTION_SELECT_IN    : in  std_logic;
     COMPLETE_OUT            : out std_logic
@@ -36,7 +35,7 @@ signal SUBBIT_COUNTER : integer range 0 to 3;
 signal BIT_COUNTER : integer range 0 to 10;
 signal BYTE_COUNTER : integer range 0 to CONFIG_DATA_SIZE - 1;
 signal BYTE_COUNTER_SLV : std_logic_vector(7 downto 0);
-signal SDA_SYNCED, SDA_SYNCER, SCL_SYNCED, SCL_SYNCER : std_logic;
+signal SDA_SYNCED, SDA_SYNCER : std_logic;
 signal REF_SYNCER, REF_SYNCED : std_logic;
 signal RES_SYNCER, RES_SYNCED : std_logic;
 signal REFRESH_RATE_SELECT_LATCHED : std_logic;
@@ -212,8 +211,6 @@ begin
         COMPLETE_OUT <= '0';
         SDA_SYNCER <= '0';
         SDA_SYNCED <= '0';
-        SCL_SYNCER <= '0';
-        SCL_SYNCED <= '0';
         REF_SYNCER <= '0';
         RES_SYNCER <= '0';
         REF_SYNCED <= '0';
@@ -223,8 +220,6 @@ begin
     elsif rising_edge(CLOCK) then
         SDA_SYNCER <= SDA_IN;
         SDA_SYNCED <= SDA_SYNCER;
-        SCL_SYNCER <= SCL_IN;
-        SCL_SYNCED <= SCL_SYNCER;
         RES_SYNCER <= RESOLUTION_SELECT_IN;
         RES_SYNCED <= RES_SYNCER;
         REF_SYNCER <= REFRESH_RATE_SELECT_IN;
@@ -266,12 +261,7 @@ begin
                             BIT_COUNTER <= BIT_COUNTER + 1;
                         end if;
                     else
-                        --if SUBBIT_COUNTER = 2 and SCL_SYNCED = '0' then
-                            -- Clock stretch detection
-                        --    SUBBIT_COUNTER <= SUBBIT_COUNTER;
-                        --else
-                            SUBBIT_COUNTER <= SUBBIT_COUNTER + 1;
-                        --end if;
+                        SUBBIT_COUNTER <= SUBBIT_COUNTER + 1;
                     end if;
                 else
                     DELAY_COUNTER <= DELAY_COUNTER + 1;

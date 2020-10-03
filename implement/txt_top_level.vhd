@@ -44,7 +44,7 @@ entity TXT_TOP_LEVEL is
     SRAM_OE_N   : out std_logic;
     SRAM_WE_N   : out std_logic;
     SRAM_CE_N   : out std_logic;
-    -- SAA7113 Video Processor (optional) - use same pins as oscillator for I2C
+    -- SAA7113 Video Processor for future use (optional) - use same pins as oscillator for I2C
     VP_DATA_IN  : in std_logic_vector(7 downto 0);
     VP_RTCO_IN  : in std_logic;
     VP_RTS0_IN  : in std_logic;
@@ -105,6 +105,10 @@ constant V_BACK_PORCH_2 : integer := 23;
 
 -- Button repeat delay (Page Up and Page Down only)
 constant BUTTON_DELAY_COUNTER_MAX : integer := 2775000;
+
+constant KEYPAD_ROW_SCAN_INTERVAL : integer := 69375;    -- 2.5ms per row
+
+constant CHAR_HYPHEN : std_logic_vector(6 downto 0) := "0101101";
 
 -- '1' for keypad buttons except Page Up and Page Down, '0' for DIP switches
 constant MOMENTARY_MASK : std_logic_vector(35 downto 0) := 
@@ -257,8 +261,8 @@ begin
 PAGE_NUMBER_CONTROLLER: process(CLK_27_750, RESET)
     begin
         if RESET = '1' then
-            PAGE_NUMBER <= "00000000000";
-            SUBPAGE_NUMBER <= "0000000000000";
+            PAGE_NUMBER <= (others => '0');
+            SUBPAGE_NUMBER <= (others => '0');
             KEYPAD_FIRST_PASS_LAST <= '0';
             MIX_ENABLE <= '0';
             REVEAL_ENABLE <= '0';
@@ -430,16 +434,16 @@ PAGE_NUMBER_CONTROLLER: process(CLK_27_750, RESET)
     
     STATUS_2 <= HEX_TO_ASCII(TEMP_DIG_2)                    when DIGIT_INDEX > 1 and SUBPAGE_ENABLE = '1' else
                 HEX_TO_ASCII(NOT (TEMP_DIG_2(2) OR TEMP_DIG_2(1) OR TEMP_DIG_2(0)) & TEMP_DIG_2(2 downto 0)) when DIGIT_INDEX > 1 and SUBPAGE_ENABLE = '0' else
-                "0101101"                                   when DIGIT_INDEX = 1 else
+                CHAR_HYPHEN                                 when DIGIT_INDEX = 1 else
                 HEX_TO_ASCII(SUBPAGE_NUMBER(10 downto 7))   when SUBPAGE_ENABLE = '1' else
                 HEX_TO_ASCII(NOT (PAGE_NUMBER(10) OR PAGE_NUMBER(9) OR PAGE_NUMBER(8)) & PAGE_NUMBER(10 downto 8));
     
     STATUS_3 <= HEX_TO_ASCII(TEMP_DIG_3)                    when DIGIT_INDEX > 2 else
-                "0101101"                                   when DIGIT_INDEX <= 2 and DIGIT_INDEX > 0 else
+                CHAR_HYPHEN                                 when DIGIT_INDEX <= 2 and DIGIT_INDEX > 0 else
                 "0110" & SUBPAGE_NUMBER(6 downto 4)         when SUBPAGE_ENABLE = '1' else
                 HEX_TO_ASCII(PAGE_NUMBER(7 downto 4));
     
-    STATUS_4 <= "0101101"                                   when DIGIT_INDEX > 0 else
+    STATUS_4 <= CHAR_HYPHEN                                 when DIGIT_INDEX > 0 else
                 HEX_TO_ASCII(SUBPAGE_NUMBER(3 downto 0))    when SUBPAGE_ENABLE = '1' else
                 HEX_TO_ASCII(PAGE_NUMBER(3 downto 0));
 
@@ -489,7 +493,7 @@ KEYPAD_CONTROLLER: entity work.KEYPAD
     generic map(
     COLS => KEYPAD_COLS'length,
     ROWS => KEYPAD_ROWS'length,
-    DELAY => 69375,    -- 2.5ms per row
+    DELAY => KEYPAD_ROW_SCAN_INTERVAL,
     MOMENTARY_MASK => MOMENTARY_MASK
     )
     port map(
@@ -607,7 +611,7 @@ DISPLAY_GENERATOR: entity work.DISPLAY_GENERATOR
     MIX_IN => MIX_ENABLE,
     REVEAL_IN => REVEAL_ENABLE,
     AB_EN_IN => AB_ENABLE,
-    SIZE_SELECT_IN => RESOLUTION_SELECT,
+    RESOLUTION_SELECT_IN => RESOLUTION_SELECT,
     LEVEL_2_5_EN_IN => LEVEL_2_5_ENABLE,
     LEVEL_2_5_CLEAR_EN_IN => LEVEL_2_5_CLEAR_EN,
     
@@ -689,7 +693,6 @@ CLOCK_CONTROLLER: entity work.SI5351
     SDA_OUT => PRCLK_SDA_INT,
     SCL_OUT => PRCLK_SCL_INT,
     SDA_IN => PRCLK_SDA,
-    SCL_IN => PRCLK_SCL,
     REFRESH_RATE_SELECT_IN => REFRESH_RATE_SELECT,
     RESOLUTION_SELECT_IN => RESOLUTION_SELECT,
     COMPLETE_OUT => LED_D16_OUT);
