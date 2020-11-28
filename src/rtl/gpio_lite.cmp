@@ -1,0 +1,8 @@
+	component gpio_lite is
+		port (
+			outclock : in  std_logic                    := 'X';             -- export
+			din      : in  std_logic_vector(7 downto 0) := (others => 'X'); -- export
+			pad_out  : out std_logic_vector(3 downto 0)                     -- export
+		);
+	end component gpio_lite;
+

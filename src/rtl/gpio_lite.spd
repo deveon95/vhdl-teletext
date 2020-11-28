@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<simPackage>
+ <file
+   path="gpio_lite_sim/altera_gpio_lite/altera_gpio_lite.sv"
+   type="SYSTEM_VERILOG"
+   library="gpio_lite" />
+ <file
+   path="gpio_lite_sim/altera_gpio_lite/mentor/altera_gpio_lite.sv"
+   type="SYSTEM_VERILOG_ENCRYPT"
+   library="gpio_lite"
+   simulator="modelsim" />
+ <file path="gpio_lite_sim/gpio_lite.vhd" type="VHDL" />
+ <topLevel name="gpio_lite" />
+ <deviceFamily name="max10" />
+</simPackage>

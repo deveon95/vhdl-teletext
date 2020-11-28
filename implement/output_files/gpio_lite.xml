@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<instance entity-name="altera_gpio_lite" version="19.1" >
+<generic name="DEVICE_FAMILY" value="MAX 10" />
+<generic name="PIN_TYPE" value="output" />
+<generic name="SIZE" value="4" />
+<generic name="gui_true_diff_buf" value="true" />
+<generic name="gui_pseudo_diff_buf" value="false" />
+<generic name="gui_bus_hold" value="false" />
+<generic name="gui_open_drain" value="false" />
+<generic name="gui_enable_oe_port" value="false" />
+<generic name="gui_enable_nsleep_port" value="false" />
+<generic name="gui_io_reg_mode" value="ddr" />
+<generic name="gui_enable_aclr_port" value="false" />
+<generic name="gui_enable_aset_port" value="false" />
+<generic name="gui_enable_sclr_port" value="false" />
+<generic name="gui_set_registers_to_power_up_high" value="false" />
+<generic name="gui_clock_enable" value="false" />
+<generic name="gui_invert_output" value="false" />
+<generic name="gui_invert_input_clock" value="false" />
+<generic name="gui_use_register_to_drive_obuf_oe" value="false" />
+<generic name="gui_use_ddio_reg_to_drive_oe" value="false" />
+<generic name="gui_use_advanced_ddr_features" value="false" />
+<generic name="gui_enable_phase_detector_for_ck" value="false" />
+<generic name="gui_enable_oe_half_cycle_delay" value="true" />
+<generic name="gui_enable_hr_clock" value="false" />
+<generic name="gui_enable_invert_hr_clock_port" value="false" />
+<generic name="gui_invert_clkdiv_input_clock" value="false" />
+<generic name="gui_invert_output_clock" value="false" />
+<generic name="gui_invert_oe_inclock" value="false" />
+<generic name="gui_use_hardened_ddio_input_registers" value="false" />
+</instance>

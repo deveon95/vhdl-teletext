@@ -1,5 +1,5 @@
 -- HDMI.vhd
--- HDMI display controller
+-- HDMI display controller using Double Data Rate IO
 --
 -- Copyright 2020 Nick Schollar
 -- This code is subject to the licence in the LICENSE.TXT file in the project directory
@@ -28,7 +28,7 @@ entity HDMI is
     V_BACK_PORCH_2  : integer);
     port (
     CLK_PIXEL       : in  std_logic;        -- Pixel clock
-    CLK_BIT         : in  std_logic;        -- 10x pixel clock from PLL
+    CLK_BIT         : in  std_logic;        -- 5x pixel clock from PLL
     RESET           : in  std_logic;
     RESOLUTION_SELECT_IN : in std_logic;
     R_IN            : in std_logic_vector(7 downto 0);
@@ -36,10 +36,10 @@ entity HDMI is
     B_IN            : in std_logic_vector(7 downto 0);
     NEW_ROW_OUT     : out std_logic;
     NEW_SCREEN_OUT  : out std_logic;
-    R_OUT           : out std_logic;
-    G_OUT           : out std_logic;
-    B_OUT           : out std_logic;
-    CLK_OUT         : out std_logic);
+    R_OUT           : out std_logic_vector(1 downto 0);
+    G_OUT           : out std_logic_vector(1 downto 0);
+    B_OUT           : out std_logic_vector(1 downto 0);
+    CLK_OUT         : out std_logic_vector(1 downto 0));
 end entity HDMI;
 
 architecture RTL of HDMI is
@@ -232,17 +232,17 @@ OUTPUT_SHIFTER: process (CLK_BIT, RESET)
                 SHIFT_G <= LATCHED_G;
                 SHIFT_B <= LATCHED_B;
             else
-                SHIFT_R <= '0' & SHIFT_R(9 downto 1);
-                SHIFT_G <= '0' & SHIFT_G(9 downto 1);
-                SHIFT_B <= '0' & SHIFT_B(9 downto 1);
+                SHIFT_R <= "00" & SHIFT_R(9 downto 2);
+                SHIFT_G <= "00" & SHIFT_G(9 downto 2);
+                SHIFT_B <= "00" & SHIFT_B(9 downto 2);
             end if;
-            SHIFT_CLK <= SHIFT_CLK(0) & SHIFT_CLK(9 downto 1);
+            SHIFT_CLK <= SHIFT_CLK(1) & SHIFT_CLK(0) & SHIFT_CLK(9 downto 2);
         end if;
     end process;
     
-    R_OUT <= SHIFT_R(0);
-    G_OUT <= SHIFT_G(0);
-    B_OUT <= SHIFT_B(0);
-    CLK_OUT <= SHIFT_CLK(0);
+    R_OUT <= SHIFT_R(1) & SHIFT_R(0);
+    G_OUT <= SHIFT_G(1) & SHIFT_G(0);
+    B_OUT <= SHIFT_B(1) & SHIFT_B(0);
+    CLK_OUT <= SHIFT_CLK(1) & SHIFT_CLK(0);
     
 end architecture;

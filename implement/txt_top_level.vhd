@@ -213,10 +213,10 @@ signal NEW_SCREEN : std_logic;
 signal R : std_logic_vector(3 downto 0);
 signal G : std_logic_vector(3 downto 0);
 signal B : std_logic_vector(3 downto 0);
-signal TMDS_D0_UNBUF : std_logic;
-signal TMDS_D1_UNBUF : std_logic;
-signal TMDS_D2_UNBUF : std_logic;
-signal TMDS_CLK_UNBUF : std_logic;
+signal TMDS_D0_UNBUF : std_logic_vector(1 downto 0);
+signal TMDS_D1_UNBUF : std_logic_vector(1 downto 0);
+signal TMDS_D2_UNBUF : std_logic_vector(1 downto 0);
+signal TMDS_CLK_UNBUF : std_logic_vector(1 downto 0);
 signal CLK_VIDEO_PIXEL : std_logic;
 signal CLK_VIDEO_BIT : std_logic;
 
@@ -242,9 +242,17 @@ begin
 end HEX_TO_ASCII;
 
 -- Full component instantiation of Verilog module required due to Quartus bug
-component obuf_iobuf_out_tvs
-port (datain : in std_logic;
-      dataout : out std_logic);
+-- component obuf_iobuf_out_tvs
+-- port (datain : in std_logic;
+      -- dataout : out std_logic);
+-- end component;
+
+component gpio_lite is
+	port (
+		outclock  : in  std_logic                    := '0';             --  outclock.export
+		din       : in  std_logic_vector(7 downto 0) := (others => '0'); --       din.export
+		pad_out   : out std_logic_vector(3 downto 0)
+	);
 end component;
 
 component pll
@@ -661,25 +669,35 @@ HDMI: entity work.HDMI
     B_OUT => TMDS_D0_UNBUF,
     CLK_OUT => TMDS_CLK_UNBUF);
     
-BUF_D0: obuf_iobuf_out_tvs
-    port map(
-    datain => TMDS_D0_UNBUF,
-    dataout => TMDS_D0);
+-- BUF_D0: obuf_iobuf_out_tvs
+    -- port map(
+    -- datain => TMDS_D0_UNBUF,
+    -- dataout => TMDS_D0);
     
-BUF_D1: obuf_iobuf_out_tvs
-    port map(
-    datain => TMDS_D1_UNBUF,
-    dataout => TMDS_D1);
+-- BUF_D1: obuf_iobuf_out_tvs
+    -- port map(
+    -- datain => TMDS_D1_UNBUF,
+    -- dataout => TMDS_D1);
     
-BUF_D2: obuf_iobuf_out_tvs
-    port map(
-    datain => TMDS_D2_UNBUF,
-    dataout => TMDS_D2);
+-- BUF_D2: obuf_iobuf_out_tvs
+    -- port map(
+    -- datain => TMDS_D2_UNBUF,
+    -- dataout => TMDS_D2);
     
-BUF_CLK: obuf_iobuf_out_tvs
+-- BUF_CLK: obuf_iobuf_out_tvs
+    -- port map(
+    -- datain => TMDS_CLK_UNBUF,
+    -- dataout => TMDS_CLK);
+
+BUF_DDIO: gpio_lite
     port map(
-    datain => TMDS_CLK_UNBUF,
-    dataout => TMDS_CLK);
+    outclock => CLK_VIDEO_BIT,
+    din => TMDS_CLK_UNBUF(1) & TMDS_D2_UNBUF(1) & TMDS_D1_UNBUF(1) & TMDS_D0_UNBUF(1) & TMDS_CLK_UNBUF(0) & TMDS_D2_UNBUF(0) & TMDS_D1_UNBUF(0) & TMDS_D0_UNBUF(0),
+    pad_out(3) => TMDS_CLK,
+    pad_out(2) => TMDS_D2,
+    pad_out(1) => TMDS_D1,
+    pad_out(0) => TMDS_D0
+    );
     
 INTERNAL_OSCILLATOR: entity work.intosc
     port map(

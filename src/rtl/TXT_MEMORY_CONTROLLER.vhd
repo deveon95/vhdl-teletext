@@ -350,13 +350,13 @@ MAIN: process(CLK_27_750, RESET)
     
     MEM_ADDRESS_OUT <= std_logic_vector(to_unsigned(ADDRESS_COUNTER, 11));
     
-    STATUS_ARRAY(0) <= "0000111";
+    STATUS_ARRAY(0) <= "0000110";           -- 0000111 for Alpla White
     STATUS_ARRAY(1) <= STATUS_IN_1;
     STATUS_ARRAY(2) <= STATUS_IN_2;
     STATUS_ARRAY(3) <= STATUS_IN_3;
     STATUS_ARRAY(4) <= STATUS_IN_4;
-    STATUS_ARRAY(5) <= "0100000";
-    STATUS_ARRAY(6) <= "0100000";
+    STATUS_ARRAY(5) <= "0100000";           -- Space
+    STATUS_ARRAY(6) <= "0100000";           -- Space
     STATUS_ARRAY(7) <= "0000010" when PAGE_FOUND = '0' else "0000111";
 
     CLEAR_PAGE_FOUND <= '0' when LAST_LOADED_PAGE = REQ_PAGE_IN and LAST_LOADED_MAGAZINE = REQ_MAGAZINE_IN and (REQ_SUBCODE_SPEC_IN = '0' or LAST_LOADED_SUBCODE = REQ_SUBCODE_IN) else '1';

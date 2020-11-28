@@ -1,0 +1,3 @@
+gpio_lite_sim/gpio_lite.vhd
+gpio_lite_sim/altera_gpio_lite/altera_gpio_lite.sv
+gpio_lite_sim/altera_gpio_lite/mentor/altera_gpio_lite.sv

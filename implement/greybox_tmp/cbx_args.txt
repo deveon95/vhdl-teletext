@@ -1,0 +1,12 @@
+INTENDED_DEVICE_FAMILY="Cyclone 10 LP"
+enable_bus_hold=FALSE
+left_shift_series_termination_control=FALSE
+number_of_channels=1
+open_drain_output=FALSE
+pseudo_differential_mode=FALSE
+use_differential_mode=FALSE
+use_oe=FALSE
+use_termination_control=FALSE
+DEVICE_FAMILY="Cyclone 10 LP"
+datain
+dataout

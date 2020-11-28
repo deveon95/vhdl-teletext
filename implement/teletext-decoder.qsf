@@ -182,6 +182,13 @@ set_global_assignment -name FLOW_ENABLE_POWER_ANALYZER ON
 set_global_assignment -name POWER_DEFAULT_INPUT_IO_TOGGLE_RATE "12.5 %"
 set_global_assignment -name ENABLE_SIGNALTAP OFF
 set_global_assignment -name USE_SIGNALTAP_FILE stp2.stp
+set_location_assignment PIN_61 -to KEYPAD_ROWS[6]
+set_location_assignment PIN_60 -to KEYPAD_ROWS[7]
+set_location_assignment PIN_59 -to KEYPAD_ROWS[8]
+set_location_assignment PIN_52 -to LED_D16_OUT
+set_instance_assignment -name IO_STANDARD "2.5 V" -to LED_D16_OUT
+set_location_assignment PIN_54 -to LED_D2_OUT
+set_instance_assignment -name IO_STANDARD "2.5 V" -to LED_D2_OUT
 set_global_assignment -name SDC_FILE "teletext-decoder.sdc"
 set_global_assignment -name VHDL_FILE ../src/rtl/si5351.vhd
 set_global_assignment -name VHDL_FILE ../src/rtl/TXT_DATA_RECOVERY.vhd
@@ -201,13 +208,8 @@ set_global_assignment -name QIP_FILE ../src/rtl/obuf.qip
 set_global_assignment -name QIP_FILE ../src/rtl/pll.qip
 set_global_assignment -name VERILOG_FILE ../src/rtl/intosc/synthesis/submodules/altera_int_osc.v
 set_global_assignment -name VHDL_FILE ../src/rtl/intosc/synthesis/intosc.vhd
+set_global_assignment -name QIP_FILE ../src/rtl/gpio_lite.qip
+set_global_assignment -name SIP_FILE ../src/rtl/gpio_lite.sip
 set_global_assignment -name VHDL_FILE txt_top_level.vhd
-set_location_assignment PIN_61 -to KEYPAD_ROWS[6]
-set_location_assignment PIN_60 -to KEYPAD_ROWS[7]
-set_location_assignment PIN_59 -to KEYPAD_ROWS[8]
-set_location_assignment PIN_52 -to LED_D16_OUT
-set_instance_assignment -name IO_STANDARD "2.5 V" -to LED_D16_OUT
-set_location_assignment PIN_54 -to LED_D2_OUT
-set_instance_assignment -name IO_STANDARD "2.5 V" -to LED_D2_OUT
 set_global_assignment -name SIGNALTAP_FILE stp2.stp
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
