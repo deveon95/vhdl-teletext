@@ -43,14 +43,14 @@ architecture RTL of DISPLAY_GENERATOR is
 constant FLASH_DURATION : integer := 25000000;
 
 constant H_CHAR_SIZE : integer := 6;        -- This parameter must be set to suit the CGROM
-constant V_CHAR_SIZE : integer := 11;
+constant V_CHAR_SIZE : integer := 10;
 constant V_CHAR_SIZE_BITS : integer := 4;   -- Number of bits required for std_logic_vector representation of V_CHAR_SIZE
 constant MOSAIC_DIV1 : integer := 3;
 constant MOSAIC_DIV2 : integer := 7;
 constant TEXT_LINES : integer := 25;
 constant TEXT_COLS : integer := 40;
-constant V_PIXEL_STRETCH : integer := 2;
-constant H_PIXEL_STRETCH : integer := 2;
+constant V_PIXEL_STRETCH : integer := 3;
+constant H_PIXEL_STRETCH : integer := 4;
 
 constant DISPLAY_AREA_WIDTH : integer := H_CHAR_SIZE * H_PIXEL_STRETCH * TEXT_COLS;
 constant DISPLAY_AREA_HEIGHT : integer := V_CHAR_SIZE * V_PIXEL_STRETCH * TEXT_LINES;

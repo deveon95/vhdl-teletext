@@ -1,6 +1,6 @@
 
 create_clock -name {CLK_27_750} -period 36.036 [get_ports {CLK_27_750}]
-create_clock -name {CLK_VIDEO} -period 25.00 [get_ports {CLK_VIDEO}]
+create_clock -name {CLK_VIDEO} -period 75.00 [get_ports {CLK_VIDEO}]
 create_clock -name {int_osc_clk} -period 8.62 [get_pins -compatibility_mode {*oscillator_dut|clkout}]
 derive_clock_uncertainty
 derive_pll_clocks

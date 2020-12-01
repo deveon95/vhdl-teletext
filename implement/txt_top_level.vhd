@@ -76,14 +76,23 @@ constant V_FRONT_PORCH_1 : integer := 10;
 constant V_SYNC_PULSE_1 : integer := 2;
 constant V_BACK_PORCH_1 : integer := 37;
 -- Parameters for 800x600 resolution
-constant H_SIZE_2 : integer := 800;
-constant H_FRONT_PORCH_2 : integer := 40;
-constant H_SYNC_PULSE_2 : integer := 128;
-constant H_BACK_PORCH_2 : integer := 88;
-constant V_SIZE_2 : integer := 600;
-constant V_FRONT_PORCH_2 : integer := 1;
-constant V_SYNC_PULSE_2 : integer := 4;
-constant V_BACK_PORCH_2 : integer := 23;
+-- constant H_SIZE_2 : integer := 800;
+-- constant H_FRONT_PORCH_2 : integer := 40;
+-- constant H_SYNC_PULSE_2 : integer := 128;
+-- constant H_BACK_PORCH_2 : integer := 88;
+-- constant V_SIZE_2 : integer := 600;
+-- constant V_FRONT_PORCH_2 : integer := 1;
+-- constant V_SYNC_PULSE_2 : integer := 4;
+-- constant V_BACK_PORCH_2 : integer := 23;
+-- Parameters for 1280x720 resolution
+constant H_SIZE_2 : integer := 1280;
+constant H_FRONT_PORCH_2 : integer := 110;
+constant H_SYNC_PULSE_2 : integer := 40;
+constant H_BACK_PORCH_2 : integer := 220;
+constant V_SIZE_2 : integer := 720;
+constant V_FRONT_PORCH_2 : integer := 5;
+constant V_SYNC_PULSE_2 : integer := 5;
+constant V_BACK_PORCH_2 : integer := 20;
 
 -- constant H_SIZE : integer := 720;
 -- constant H_FRONT_PORCH : integer := 16;
