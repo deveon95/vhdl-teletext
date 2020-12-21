@@ -48,6 +48,12 @@ The [SignalTap II Logic Analyzer](https://www.intel.com/content/dam/www/programm
 
 The MAX10 FPGA is a normal SRAM-based FPGA with an internal configuration flash. Like other Altera FPGAs, it is possible to just program the SRAM without programming the flash, ideal for rapid testing of design modifications, and the design stored in flash is loaded when the board is power-cycled.
 
+## Using a USB-Blaster
+
 To program the FPGA, connect the programmer to J8. Load the POF file (if programming the flash) or SOF file (if only programming the SRAM) into the Quartus Programmer window, tick Program/Configure and Verify, then press Start. Programming the flash will take several seconds but programming the SRAM is instant.
 
 It is possible to store two images in the configuration flash. When configured correctly, J11 can be used to choose which image is used.
+
+## Using a Raspberry Pi
+
+The FPGA can be programmed using the GPIO of a Raspberry Pi. See [https://nick-elec.blogspot.com/2020/12/program-intel-fpgas-using-raspberry-pi-openocd.html](https://nick-elec.blogspot.com/2020/12/program-intel-fpgas-using-raspberry-pi-openocd.html) for details.
