@@ -2,10 +2,13 @@
 
 A teletext decoder and display generator in VHDL for FPGAs.
 
-* HDMI output
+Detailed descriptions of how the various modules work can be found on my blog - [Nick's Electronics Blog](https://nick-elec.blogspot.com/).
+
+* [HDMI output](https://nick-elec.blogspot.com/2020/12/generate-hdmi-dvi-using-fpga.html)
 * Level 1.0 decoding and display
 * Selected Level 2.5 and Level 3.5 display features implemented - CLUTs, default row and screen colour, black background substitution
 * Resolution selection via DIP switches: 720x576 or 800x600 at 50Hz or 60Hz (640x480 possible with minor code modifications)
+* High resolution 1280x720 mode also available - see feature/720p branch
 * Alpha Black enable switch for selecting between adherence to the original specification or compatibility with certain modern teletext services
 * Power-on page number selection via DIP switches
 * Mix function enables/disables the display of background colours (note that this board does not display the video portion of the composite video signal over HDMI)
@@ -15,7 +18,9 @@ A teletext decoder and display generator in VHDL for FPGAs.
 * Level 2.5/3.5 store function for applying enhancements to Level 1.0 pages
 * Parameterised design enables design tweaks without any programming knowledge
 * No vendor-specific code (except dual port RAM, PLL and high-speed I/O buffers)
-* Vunit for unit tests (testbenches only completed for some modules so far)
+* [Vunit](https://vunit.github.io/) for unit tests (testbenches only completed for some modules so far)
+
+![Example display captured using the VHDL Teletext board connected to a TV](docs/images/pallette-store-function.jpg)
 
 # Hardware
 
@@ -30,6 +35,10 @@ Also available on eBay for those who would encounter high fees paying in USD on 
 Two oscillators are required for the design: one at 27.750 MHz for teletext decoding and one at whatever frequency is required for the HDMI resolution selected using the DIP switches. The FPGA internal oscillator is used to clock the programmable oscillator controller, required because the programmable oscillator does not generate useful clock frequencies until programmed.
 
 The leftmost DIP switch operates the enhancement data hold function and should normally be left in the up position. When in the up position, enhancement data will be treated as normal. When in the down position, enhancement data will be retained when switching to a different page without enhancement data, allowing enhancements (such as Level 2.5/3.5 colour mapping) to be used on pages that do not originally have these enhancements.
+
+# SignalTap
+
+The [SignalTap II Logic Analyzer](https://www.intel.com/content/dam/www/programmable/us/en/pdfs/literature/ug/ug-qpp-debug.pdf#page=21) enables you to monitor signals inside the FPGA and see the waveforms on your computer screen. This is a great tool for learning how the decoder processes real data or to help with debugging your own customisations such as a Telesoftware interface.
 
 # RTL block diagram
 

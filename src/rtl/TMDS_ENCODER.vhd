@@ -117,10 +117,10 @@ ENCODE: process(CLK)
     end process;
     
     -- Determine the control word
-    CONTROL_DATA <= "1101010100" when CONTROL_IN = "00" else
-                    "0010101011" when CONTROL_IN = "01" else
-                    "0101010100" when CONTROL_IN = "10" else
-                    "1010101011";
+    CONTROL_DATA <= "0010101011" when CONTROL_IN = "00" else
+                    "1101010100" when CONTROL_IN = "01" else
+                    "0010101010" when CONTROL_IN = "10" else
+                    "1101010101";
     
     TMDS_OUT <= CONTROL_DATA when VIDEO_ACTIVE_IN = '0' else ENCODED_DATA;
 
