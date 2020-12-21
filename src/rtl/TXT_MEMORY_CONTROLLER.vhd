@@ -350,7 +350,7 @@ MAIN: process(CLK_27_750, RESET)
     
     MEM_ADDRESS_OUT <= std_logic_vector(to_unsigned(ADDRESS_COUNTER, 11));
     
-    STATUS_ARRAY(0) <= "0000110";           -- 0000111 for Alpla White
+    STATUS_ARRAY(0) <= "0000111";           -- 0000111 for Alpla White
     STATUS_ARRAY(1) <= STATUS_IN_1;
     STATUS_ARRAY(2) <= STATUS_IN_2;
     STATUS_ARRAY(3) <= STATUS_IN_3;
