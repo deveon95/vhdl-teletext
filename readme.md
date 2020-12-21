@@ -41,4 +41,6 @@ The MAX10 FPGA is a normal SRAM-based FPGA with an internal configuration flash.
 
 To program the FPGA, connect the programmer to J8. Load the POF file (if programming the flash) or SOF file (if only programming the SRAM) into the Quartus Programmer window, tick Program/Configure and Verify, then press Start. Programming the flash will take several seconds but programming the SRAM is instant.
 
+Alternatively, it can be programmed using [OpenOCD on the Raspberry Pi](https://nick-elec.blogspot.com/2020/12/program-intel-fpgas-using-raspberry-pi-openocd.html).
+
 It is possible to store two images in the configuration flash. When configured correctly, J11 can be used to choose which image is used.
