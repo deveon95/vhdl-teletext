@@ -180,8 +180,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.4"
-     inkscape:cx="74.53536"
-     inkscape:cy="224.9116"
+     inkscape:cx="266.44607"
+     inkscape:cy="226.80196"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -236,12 +236,12 @@
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:2.82222223px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        x="37.865734"
-       y="163.38542"
+       y="56.494225"
        id="text6628"><tspan
          sodipodi:role="line"
          id="tspan6626"
          x="37.865734"
-         y="163.38542"
+         y="56.494225"
          style="stroke-width:0.26458332px">The size of the blanking interval has been exaggerated to make the diagram clearer</tspan></text>
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker6656)"
@@ -510,12 +510,14 @@
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:2.82222222px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;"
        x="97.60231"
-       y="167.35416"
+       y="164.1792"
        id="text8125"><tspan
          sodipodi:role="line"
-         id="tspan4813">Control codes shown above are transmitted on the Blue channel only</tspan><tspan
+         id="tspan999">Control codes shown above are transmitted on the Blue channel only</tspan><tspan
          sodipodi:role="line"
-         id="tspan4815">other channels always transmit 0010101011 outside of active area</tspan></text>
+         id="tspan1001">other channels always transmit 1101010100 outside of active area</tspan><tspan
+         sodipodi:role="line"
+         id="tspan1003">Bit order shown MSB first for consistency with VHDL, but data is transmitted LSB first</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:2.11666656px;line-height:125%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:center;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -546,9 +548,9 @@
        y="136.92708"
        id="text8026-9-1"><tspan
          sodipodi:role="line"
-         id="tspan4785">Control code</tspan><tspan
+         id="tspan975">Control code</tspan><tspan
          sodipodi:role="line"
-         id="tspan4787">0010101011</tspan></text>
+         id="tspan977">1101010100</tspan></text>
     <path
        style="fill:#ff0000;fill-rule:evenodd;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 44.979166,142.21874 v 9.26042 H 142.875 v -9.26042 z"
@@ -561,9 +563,9 @@
        y="146.1875"
        id="text8026-9-1-7"><tspan
          sodipodi:role="line"
-         id="tspan4789">Control code</tspan><tspan
+         id="tspan987">Control code</tspan><tspan
          sodipodi:role="line"
-         id="tspan4791">0010101010</tspan></text>
+         id="tspan989">0101010100</tspan></text>
     <path
        style="fill:#00ff00;fill-rule:evenodd;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 142.875,80.041661 h 15.875 v 60.854169 1.32291 h -15.875 z"
@@ -576,9 +578,9 @@
        y="109.14583"
        id="text8026-9-1-78"><tspan
          sodipodi:role="line"
-         id="tspan4797">Control code</tspan><tspan
+         id="tspan983">Control code</tspan><tspan
          sodipodi:role="line"
-         id="tspan4799">1101010100</tspan></text>
+         id="tspan985">0010101011</tspan></text>
     <path
        style="fill:#ffff00;fill-rule:evenodd;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 142.875,142.21874 h 15.875 v 9.26042 h -15.875 z"
@@ -591,9 +593,9 @@
        y="146.1875"
        id="text8026-9-1-78-8"><tspan
          sodipodi:role="line"
-         id="tspan4801">Control code</tspan><tspan
+         id="tspan991">Control code</tspan><tspan
          sodipodi:role="line"
-         id="tspan4803">1101010101</tspan></text>
+         id="tspan993">1010101011</tspan></text>
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="M 44.979166,64.166661 H 142.875 v 5.291666 h 15.875 v -5.291666 h 10.58333"
@@ -606,9 +608,9 @@
        y="154.91875"
        id="text8026-9-1-6"><tspan
          sodipodi:role="line"
-         id="tspan4793">Control code</tspan><tspan
+         id="tspan979">Control code</tspan><tspan
          sodipodi:role="line"
-         id="tspan4795">0010101011</tspan></text>
+         id="tspan981">1101010100</tspan></text>
     <path
        style="fill:#ff0000;fill-rule:evenodd;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 158.75,142.21874 v 9.26042 h 10.58333 v -9.26042 z"
