@@ -24,13 +24,15 @@ Detailed descriptions of how the various modules work can be found on my blog - 
 
 # Hardware
 
-The design runs on the FPGA Teletext board. The PCB includes all the hardware needed to control the teletext decoder and transmit the graphics to the display: FPGA, power supply, programmable oscillator, high-speed comparator, LVDS to TMDS level shifter, keypad, and DIP switches. The design could of course work on other FPGA boards if the necessary hardware is added.
+The design runs on the FPGA Teletext board. The PCB includes all the hardware needed to control the teletext decoder and transmit the graphics to the display: FPGA, power supply, programmable oscillator, high-speed comparator, LVDS to TMDS level shifter, keypad, and DIP switches. More details of the board are in the Tindie listing (link below). The design could of course work on other FPGA boards if the necessary hardware is added.
+
+The FPGA Teletext board includes spare GPIO broken out to headers, expanding the uses of the board to many more uses! One such use (if you develop the necessary firmware) could be a Telesoftware interface for vintage microcomputers.
 
 I have assembled a small number of boards by hand and they are up for sale below. If there is serious demand for this PCB, then I will consider getting a proper production run done, and I'll offer a self-assembly kit too. Please reach out to me on [my blog](https://nick-elec.blogspot.com/2020/12/generate-hdmi-dvi-using-fpga.html) if this is of interest.
 
 [Click here to buy the VHDL Teletext PCB on Tindie (fully assembled)](https://www.tindie.com/products/nickelec/fpga-teletext-decoder/) - ships from the UK (though all pricing is in USD on Tindie) - please remember that this is a very low volume product so I cannot achieve the low pricing of high-volume consumer gear. 
 
-Also available on eBay for those who would encounter high fees paying in USD on Tindie - [eBay link](https://www.ebay.co.uk/itm/124365633676).
+Also available on eBay for those who would encounter high fees from their bank/card provider for paying in USD on Tindie - [eBay link](https://www.ebay.co.uk/itm/124365633676).
 
 ![FPGA Teletext PCB](docs/images/fpga-pcb.jpg)
 
