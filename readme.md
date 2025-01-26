@@ -16,6 +16,7 @@ Detailed descriptions of how the various modules work can be found on my blog - 
 * Reveal button displays and hides "concealed" page content
 * Page selection via number keys, up/down buttons, and Fastext keys
 * Level 2.5/3.5 store function for applying enhancements to Level 1.0 pages
+* NEW! Level 1 National option subsets implemented (foreign/accented characters) for English, German, Italian, French, Portuguese/Spanish, Czech/Slovak
 * Parameterised design enables design tweaks without any programming knowledge
 * No vendor-specific code (except dual port RAM, PLL and high-speed I/O buffers)
 * [Vunit](https://vunit.github.io/) for unit tests (testbenches only completed for some modules so far)
@@ -31,8 +32,6 @@ The FPGA Teletext board includes spare GPIO broken out to headers, expanding the
 I have assembled a small number of boards by hand and they are up for sale below. If there is serious demand for this PCB, then I will consider getting a proper production run done, and I'll offer a self-assembly kit too. Please reach out to me on [my blog](https://nick-elec.blogspot.com/2020/12/generate-hdmi-dvi-using-fpga.html) if this is of interest.
 
 [Click here to buy the VHDL Teletext PCB on Tindie (fully assembled)](https://www.tindie.com/products/nickelec/fpga-teletext-decoder/) - ships from the UK (though all pricing is in USD on Tindie) - please remember that this is a very low volume product so I cannot achieve the low pricing of high-volume consumer gear. 
-
-Also available on eBay for those who would encounter high fees from their bank/card provider for paying in USD on Tindie - [eBay link](https://www.ebay.co.uk/itm/124365633676).
 
 ![FPGA Teletext PCB](docs/images/fpga-pcb.jpg)
 

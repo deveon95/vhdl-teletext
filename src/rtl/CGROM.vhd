@@ -77,15 +77,15 @@ begin
                 "00000" when ADDRESS = B"0100011_0111" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010" or NATIONAL_OPTION_IN = B"110") else
                 "00000" when ADDRESS = B"0100011_1000" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010" or NATIONAL_OPTION_IN = B"110") else
                 -- French
-                "00010" when ADDRESS = B"0100011_0000" and (NATIONAL_OPTION_IN = B"010") else
-                "00100" when ADDRESS = B"0100011_0001" and (NATIONAL_OPTION_IN = B"010") else
-                "01110" when ADDRESS = B"0100011_0010" and (NATIONAL_OPTION_IN = B"010") else
-                "10001" when ADDRESS = B"0100011_0011" and (NATIONAL_OPTION_IN = B"010") else
-                "11111" when ADDRESS = B"0100011_0100" and (NATIONAL_OPTION_IN = B"010") else
-                "10000" when ADDRESS = B"0100011_0101" and (NATIONAL_OPTION_IN = B"010") else
-                "01110" when ADDRESS = B"0100011_0110" and (NATIONAL_OPTION_IN = B"010") else
-                "00000" when ADDRESS = B"0100011_0111" and (NATIONAL_OPTION_IN = B"010") else
-                "00000" when ADDRESS = B"0100011_1000" and (NATIONAL_OPTION_IN = B"010") else
+                "00010" when ADDRESS = B"0100011_0000" and (NATIONAL_OPTION_IN = B"100") else
+                "00100" when ADDRESS = B"0100011_0001" and (NATIONAL_OPTION_IN = B"100") else
+                "01110" when ADDRESS = B"0100011_0010" and (NATIONAL_OPTION_IN = B"100") else
+                "10001" when ADDRESS = B"0100011_0011" and (NATIONAL_OPTION_IN = B"100") else
+                "11111" when ADDRESS = B"0100011_0100" and (NATIONAL_OPTION_IN = B"100") else
+                "10000" when ADDRESS = B"0100011_0101" and (NATIONAL_OPTION_IN = B"100") else
+                "01110" when ADDRESS = B"0100011_0110" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"0100011_0111" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"0100011_1000" and (NATIONAL_OPTION_IN = B"100") else
                 -- Portuguese/Spanish
                 "00000" when ADDRESS = B"0100011_0000" and (NATIONAL_OPTION_IN = B"101") else
                 "00000" when ADDRESS = B"0100011_0001" and (NATIONAL_OPTION_IN = B"101") else
