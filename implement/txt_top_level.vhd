@@ -182,6 +182,8 @@ signal REVEAL_LAST  : std_logic;
 signal DIGIT_INDEX : integer range 0 to 3;
 signal KEY_ACTIVE_LAST : std_logic;
 
+-- Character set selection
+signal NATIONAL_OPTION : std_logic_vector(2 downto 0);
 -- Subpage number of currently loaded page
 signal LAST_SUBCODE : std_logic_vector(12 downto 0);
 -- Editorial links for currently loaded page
@@ -587,6 +589,8 @@ MEMORY_CONTROLLER: entity work.TXT_MEMORY_CONTROLLER
     BLU_PAGE_OUT => BLU_PAGE,
     IDX_PAGE_OUT => IDX_PAGE,
     
+    NATIONAL_OPTION_OUT => NATIONAL_OPTION,
+    
     STATUS_IN_1 => STATUS_1,
     STATUS_IN_2 => STATUS_2,
     STATUS_IN_3 => STATUS_3,
@@ -622,6 +626,7 @@ DISPLAY_GENERATOR: entity work.DISPLAY_GENERATOR
     RESOLUTION_SELECT_IN => RESOLUTION_SELECT,
     LEVEL_2_5_EN_IN => LEVEL_2_5_ENABLE,
     LEVEL_2_5_CLEAR_EN_IN => LEVEL_2_5_CLEAR_EN,
+    NATIONAL_OPTION_IN => NATIONAL_OPTION,
     
     NEW_ROW_IN => NEW_ROW,
     NEW_SCREEN_IN => NEW_SCREEN,

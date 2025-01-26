@@ -5,12 +5,24 @@ use ieee.numeric_std.all;
 entity CGROM is
 port (
     ADDRESS_IN : in std_logic_vector(6 downto 0);
+    NATIONAL_OPTION_IN : in std_logic_vector(2 downto 0);       -- Need to add the actual characters next
     ROW_SELECT_IN : in std_logic_vector(3 downto 0);
     DATA_OUT : out std_logic_vector(4 downto 0));
 end entity CGROM;
 
 architecture RTL of CGROM is
     signal ADDRESS : std_logic_vector(10 downto 0);
+    -- NATIONAL_OPTION_IN determines language (15.6.2)
+    -- Characters affected are 0x23, 0x24, 0x40, 0x5B, 0x5C, 0x5D, 0x5E, 0x5F, 0x60, 0x7B, 0x7C, 0x7D, 0x7E
+    -- Languages are:
+    -- 000 English
+    -- 001 German
+    -- 010 Swedish / Finnish / Hungarian
+    -- 011 Italian
+    -- 100 French
+    -- 101 Portuguese/Spanish
+    -- 110 Czech/Slovak
+    
 begin
     ADDRESS <= ADDRESS_IN & ROW_SELECT_IN;
     
@@ -43,26 +55,88 @@ begin
                 "00000" when ADDRESS = B"0100010_0110" else
                 "00000" when ADDRESS = B"0100010_0111" else
                 "00000" when ADDRESS = B"0100010_1000" else
-                
-                "00110" when ADDRESS = B"0100011_0000" else
-                "01001" when ADDRESS = B"0100011_0001" else
-                "01000" when ADDRESS = B"0100011_0010" else
-                "01110" when ADDRESS = B"0100011_0011" else
-                "01000" when ADDRESS = B"0100011_0100" else
-                "01000" when ADDRESS = B"0100011_0101" else
-                "10111" when ADDRESS = B"0100011_0110" else
-                "00000" when ADDRESS = B"0100011_0111" else
-                "00000" when ADDRESS = B"0100011_1000" else
-                
-                "00100" when ADDRESS = B"0100100_0000" else
-                "01111" when ADDRESS = B"0100100_0001" else
-                "10100" when ADDRESS = B"0100100_0010" else
-                "01110" when ADDRESS = B"0100100_0011" else
-                "00101" when ADDRESS = B"0100100_0100" else
-                "11110" when ADDRESS = B"0100100_0101" else
-                "00100" when ADDRESS = B"0100100_0110" else
-                "00000" when ADDRESS = B"0100100_0111" else
-                "00000" when ADDRESS = B"0100100_1000" else
+                -- Character 0x23
+                -- English, Italian
+                "00110" when ADDRESS = B"0100011_0000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "01001" when ADDRESS = B"0100011_0001" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "01000" when ADDRESS = B"0100011_0010" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "01110" when ADDRESS = B"0100011_0011" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "01000" when ADDRESS = B"0100011_0100" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "01000" when ADDRESS = B"0100011_0101" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "10111" when ADDRESS = B"0100011_0110" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"0100011_0111" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"0100011_1000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                -- German, Swedish/Finnish, Czech/Slovak
+                "01010" when ADDRESS = B"0100011_0000" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010" or NATIONAL_OPTION_IN = B"110") else
+                "11111" when ADDRESS = B"0100011_0001" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010" or NATIONAL_OPTION_IN = B"110") else
+                "01010" when ADDRESS = B"0100011_0010" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010" or NATIONAL_OPTION_IN = B"110") else
+                "01010" when ADDRESS = B"0100011_0011" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010" or NATIONAL_OPTION_IN = B"110") else
+                "01010" when ADDRESS = B"0100011_0100" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010" or NATIONAL_OPTION_IN = B"110") else
+                "11111" when ADDRESS = B"0100011_0101" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010" or NATIONAL_OPTION_IN = B"110") else
+                "01010" when ADDRESS = B"0100011_0110" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010" or NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"0100011_0111" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010" or NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"0100011_1000" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010" or NATIONAL_OPTION_IN = B"110") else
+                -- French
+                "00010" when ADDRESS = B"0100011_0000" and (NATIONAL_OPTION_IN = B"010") else
+                "00100" when ADDRESS = B"0100011_0001" and (NATIONAL_OPTION_IN = B"010") else
+                "01110" when ADDRESS = B"0100011_0010" and (NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"0100011_0011" and (NATIONAL_OPTION_IN = B"010") else
+                "11111" when ADDRESS = B"0100011_0100" and (NATIONAL_OPTION_IN = B"010") else
+                "10000" when ADDRESS = B"0100011_0101" and (NATIONAL_OPTION_IN = B"010") else
+                "01110" when ADDRESS = B"0100011_0110" and (NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"0100011_0111" and (NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"0100011_1000" and (NATIONAL_OPTION_IN = B"010") else
+                -- Portuguese/Spanish
+                "00000" when ADDRESS = B"0100011_0000" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"0100011_0001" and (NATIONAL_OPTION_IN = B"101") else
+                "01111" when ADDRESS = B"0100011_0010" and (NATIONAL_OPTION_IN = B"101") else
+                "10000" when ADDRESS = B"0100011_0011" and (NATIONAL_OPTION_IN = B"101") else
+                "10000" when ADDRESS = B"0100011_0100" and (NATIONAL_OPTION_IN = B"101") else
+                "10000" when ADDRESS = B"0100011_0101" and (NATIONAL_OPTION_IN = B"101") else
+                "01111" when ADDRESS = B"0100011_0110" and (NATIONAL_OPTION_IN = B"101") else
+                "00100" when ADDRESS = B"0100011_0111" and (NATIONAL_OPTION_IN = B"101") else
+                "01000" when ADDRESS = B"0100011_1000" and (NATIONAL_OPTION_IN = B"101") else
+                -- Character 0x24
+                -- English, German, Italian, Portuguese/Spanish
+                "00100" when ADDRESS = B"0100100_0000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"101" or NATIONAL_OPTION_IN = B"111") else
+                "01111" when ADDRESS = B"0100100_0001" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"101" or NATIONAL_OPTION_IN = B"111") else
+                "10100" when ADDRESS = B"0100100_0010" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"101" or NATIONAL_OPTION_IN = B"111") else
+                "01110" when ADDRESS = B"0100100_0011" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"101" or NATIONAL_OPTION_IN = B"111") else
+                "00101" when ADDRESS = B"0100100_0100" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"101" or NATIONAL_OPTION_IN = B"111") else
+                "11110" when ADDRESS = B"0100100_0101" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"101" or NATIONAL_OPTION_IN = B"111") else
+                "00100" when ADDRESS = B"0100100_0110" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"101" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"0100100_0111" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"101" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"0100100_1000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"101" or NATIONAL_OPTION_IN = B"111") else
+                -- Swedish/Finnish
+                "10001" when ADDRESS = B"0100100_0000" and (NATIONAL_OPTION_IN = B"010") else
+                "01010" when ADDRESS = B"0100100_0001" and (NATIONAL_OPTION_IN = B"010") else
+                "01110" when ADDRESS = B"0100100_0010" and (NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"0100100_0011" and (NATIONAL_OPTION_IN = B"010") else
+                "01110" when ADDRESS = B"0100100_0100" and (NATIONAL_OPTION_IN = B"010") else
+                "01010" when ADDRESS = B"0100100_0101" and (NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"0100100_0110" and (NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"0100100_0111" and (NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"0100100_1000" and (NATIONAL_OPTION_IN = B"010") else
+                -- French
+                "00000" when ADDRESS = B"0100100_0000" and (NATIONAL_OPTION_IN = B"100") else
+                "01010" when ADDRESS = B"0100100_0001" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"0100100_0010" and (NATIONAL_OPTION_IN = B"100") else
+                "00100" when ADDRESS = B"0100100_0011" and (NATIONAL_OPTION_IN = B"100") else
+                "00100" when ADDRESS = B"0100100_0100" and (NATIONAL_OPTION_IN = B"100") else
+                "00100" when ADDRESS = B"0100100_0101" and (NATIONAL_OPTION_IN = B"100") else
+                "00100" when ADDRESS = B"0100100_0110" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"0100100_0111" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"0100100_1000" and (NATIONAL_OPTION_IN = B"100") else
+                -- Czech/Slovak
+                "00100" when ADDRESS = B"0100100_0000" and (NATIONAL_OPTION_IN = B"110") else
+                "01010" when ADDRESS = B"0100100_0001" and (NATIONAL_OPTION_IN = B"110") else
+                "00100" when ADDRESS = B"0100100_0010" and (NATIONAL_OPTION_IN = B"110") else
+                "10001" when ADDRESS = B"0100100_0011" and (NATIONAL_OPTION_IN = B"110") else
+                "10001" when ADDRESS = B"0100100_0100" and (NATIONAL_OPTION_IN = B"110") else
+                "10001" when ADDRESS = B"0100100_0101" and (NATIONAL_OPTION_IN = B"110") else
+                "01111" when ADDRESS = B"0100100_0110" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"0100100_0111" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"0100100_1000" and (NATIONAL_OPTION_IN = B"110") else
                 
                 "11000" when ADDRESS = B"0100101_0000" else
                 "11001" when ADDRESS = B"0100101_0001" else
@@ -337,16 +411,77 @@ begin
                 "00000" when ADDRESS = B"0111111_0111" else
                 "00000" when ADDRESS = B"0111111_1000" else
                 
-                
-                "01110" when ADDRESS = B"1000000_0000" else
-                "10001" when ADDRESS = B"1000000_0001" else
-                "10111" when ADDRESS = B"1000000_0010" else
-                "10101" when ADDRESS = B"1000000_0011" else
-                "10111" when ADDRESS = B"1000000_0100" else
-                "10000" when ADDRESS = B"1000000_0101" else
-                "01110" when ADDRESS = B"1000000_0110" else
-                "00000" when ADDRESS = B"1000000_0111" else
-                "00000" when ADDRESS = B"1000000_1000" else
+                -- Character 0x40
+                -- English
+                "01110" when ADDRESS = B"1000000_0000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "10001" when ADDRESS = B"1000000_0001" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "10111" when ADDRESS = B"1000000_0010" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "10101" when ADDRESS = B"1000000_0011" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "10111" when ADDRESS = B"1000000_0100" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "10000" when ADDRESS = B"1000000_0101" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "01110" when ADDRESS = B"1000000_0110" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1000000_0111" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1000000_1000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                -- German
+                "01110" when ADDRESS = B"1000000_0000" and (NATIONAL_OPTION_IN = B"001") else
+                "10000" when ADDRESS = B"1000000_0001" and (NATIONAL_OPTION_IN = B"001") else
+                "01110" when ADDRESS = B"1000000_0010" and (NATIONAL_OPTION_IN = B"001") else
+                "10001" when ADDRESS = B"1000000_0011" and (NATIONAL_OPTION_IN = B"001") else
+                "01110" when ADDRESS = B"1000000_0100" and (NATIONAL_OPTION_IN = B"001") else
+                "00001" when ADDRESS = B"1000000_0101" and (NATIONAL_OPTION_IN = B"001") else
+                "01110" when ADDRESS = B"1000000_0110" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1000000_0111" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1000000_1000" and (NATIONAL_OPTION_IN = B"001") else
+                -- Swedish/Finnish
+                "00010" when ADDRESS = B"1000000_0000" and (NATIONAL_OPTION_IN = B"010") else
+                "00100" when ADDRESS = B"1000000_0001" and (NATIONAL_OPTION_IN = B"010") else
+                "11111" when ADDRESS = B"1000000_0010" and (NATIONAL_OPTION_IN = B"010") else
+                "10000" when ADDRESS = B"1000000_0011" and (NATIONAL_OPTION_IN = B"010") else
+                "11110" when ADDRESS = B"1000000_0100" and (NATIONAL_OPTION_IN = B"010") else
+                "10000" when ADDRESS = B"1000000_0101" and (NATIONAL_OPTION_IN = B"010") else
+                "11111" when ADDRESS = B"1000000_0110" and (NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1000000_0111" and (NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1000000_1000" and (NATIONAL_OPTION_IN = B"010") else
+                -- Italian
+                "00010" when ADDRESS = B"1000000_0000" and (NATIONAL_OPTION_IN = B"011") else
+                "00100" when ADDRESS = B"1000000_0001" and (NATIONAL_OPTION_IN = B"011") else
+                "01110" when ADDRESS = B"1000000_0010" and (NATIONAL_OPTION_IN = B"011") else
+                "10001" when ADDRESS = B"1000000_0011" and (NATIONAL_OPTION_IN = B"011") else
+                "11111" when ADDRESS = B"1000000_0100" and (NATIONAL_OPTION_IN = B"011") else
+                "10000" when ADDRESS = B"1000000_0101" and (NATIONAL_OPTION_IN = B"011") else
+                "01110" when ADDRESS = B"1000000_0110" and (NATIONAL_OPTION_IN = B"011") else
+                "00000" when ADDRESS = B"1000000_0111" and (NATIONAL_OPTION_IN = B"011") else
+                "00000" when ADDRESS = B"1000000_1000" and (NATIONAL_OPTION_IN = B"011") else
+                -- French
+                "01000" when ADDRESS = B"1000000_0000" and (NATIONAL_OPTION_IN = B"100") else
+                "00100" when ADDRESS = B"1000000_0001" and (NATIONAL_OPTION_IN = B"100") else
+                "01110" when ADDRESS = B"1000000_0010" and (NATIONAL_OPTION_IN = B"100") else
+                "00001" when ADDRESS = B"1000000_0011" and (NATIONAL_OPTION_IN = B"100") else
+                "01111" when ADDRESS = B"1000000_0100" and (NATIONAL_OPTION_IN = B"100") else
+                "10001" when ADDRESS = B"1000000_0101" and (NATIONAL_OPTION_IN = B"100") else
+                "01111" when ADDRESS = B"1000000_0110" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1000000_0111" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1000000_1000" and (NATIONAL_OPTION_IN = B"100") else
+                -- Portuguese/Spanish
+                "00100" when ADDRESS = B"1000000_0000" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1000000_0001" and (NATIONAL_OPTION_IN = B"101") else
+                "00100" when ADDRESS = B"1000000_0010" and (NATIONAL_OPTION_IN = B"101") else
+                "00100" when ADDRESS = B"1000000_0011" and (NATIONAL_OPTION_IN = B"101") else
+                "00100" when ADDRESS = B"1000000_0100" and (NATIONAL_OPTION_IN = B"101") else
+                "00100" when ADDRESS = B"1000000_0101" and (NATIONAL_OPTION_IN = B"101") else
+                "00100" when ADDRESS = B"1000000_0110" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1000000_0111" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1000000_1000" and (NATIONAL_OPTION_IN = B"101") else
+                -- Czech/Slovak
+                "01010" when ADDRESS = B"1000000_0000" and (NATIONAL_OPTION_IN = B"110") else
+                "00100" when ADDRESS = B"1000000_0001" and (NATIONAL_OPTION_IN = B"110") else
+                "01111" when ADDRESS = B"1000000_0010" and (NATIONAL_OPTION_IN = B"110") else
+                "10000" when ADDRESS = B"1000000_0011" and (NATIONAL_OPTION_IN = B"110") else
+                "10000" when ADDRESS = B"1000000_0100" and (NATIONAL_OPTION_IN = B"110") else
+                "10000" when ADDRESS = B"1000000_0101" and (NATIONAL_OPTION_IN = B"110") else
+                "01111" when ADDRESS = B"1000000_0110" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1000000_0111" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1000000_1000" and (NATIONAL_OPTION_IN = B"110") else
                 
                 "00100" when ADDRESS = B"1000001_0000" else
                 "01010" when ADDRESS = B"1000001_0001" else
@@ -610,67 +745,353 @@ begin
                 "11111" when ADDRESS = B"1011010_0110" else
                 "00000" when ADDRESS = B"1011010_0111" else
                 "00000" when ADDRESS = B"1011010_1000" else
+                -- Character 0x5B
+                -- English
+                "00000" when ADDRESS = B"1011011_0000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00100" when ADDRESS = B"1011011_0001" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "01000" when ADDRESS = B"1011011_0010" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "11111" when ADDRESS = B"1011011_0011" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "01000" when ADDRESS = B"1011011_0100" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00100" when ADDRESS = B"1011011_0101" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1011011_0110" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1011011_0111" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1011011_1000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                -- German, Swedish/Finnish
+                "10001" when ADDRESS = B"1011011_0000" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1011011_0001" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "01110" when ADDRESS = B"1011011_0010" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1011011_0011" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "11111" when ADDRESS = B"1011011_0100" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1011011_0101" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1011011_0110" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1011011_0111" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1011011_1000" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                -- Italian
+                "00100" when ADDRESS = B"1011011_0000" and (NATIONAL_OPTION_IN = B"011") else
+                "01010" when ADDRESS = B"1011011_0001" and (NATIONAL_OPTION_IN = B"011") else
+                "00100" when ADDRESS = B"1011011_0010" and (NATIONAL_OPTION_IN = B"011") else
+                "00000" when ADDRESS = B"1011011_0011" and (NATIONAL_OPTION_IN = B"011") else
+                "00000" when ADDRESS = B"1011011_0100" and (NATIONAL_OPTION_IN = B"011") else
+                "00000" when ADDRESS = B"1011011_0101" and (NATIONAL_OPTION_IN = B"011") else
+                "00000" when ADDRESS = B"1011011_0110" and (NATIONAL_OPTION_IN = B"011") else
+                "00000" when ADDRESS = B"1011011_0111" and (NATIONAL_OPTION_IN = B"011") else
+                "00000" when ADDRESS = B"1011011_1000" and (NATIONAL_OPTION_IN = B"011") else
+                -- French
+                "10001" when ADDRESS = B"1011011_0000" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1011011_0001" and (NATIONAL_OPTION_IN = B"100") else
+                "01110" when ADDRESS = B"1011011_0010" and (NATIONAL_OPTION_IN = B"100") else
+                "10001" when ADDRESS = B"1011011_0011" and (NATIONAL_OPTION_IN = B"100") else
+                "11111" when ADDRESS = B"1011011_0100" and (NATIONAL_OPTION_IN = B"100") else
+                "10000" when ADDRESS = B"1011011_0101" and (NATIONAL_OPTION_IN = B"100") else
+                "01110" when ADDRESS = B"1011011_0110" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1011011_0111" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1011011_1000" and (NATIONAL_OPTION_IN = B"100") else
+                -- Portuguese/Spanish
+                "00010" when ADDRESS = B"1011011_0000" and (NATIONAL_OPTION_IN = B"101") else
+                "00100" when ADDRESS = B"1011011_0001" and (NATIONAL_OPTION_IN = B"101") else
+                "01110" when ADDRESS = B"1011011_0010" and (NATIONAL_OPTION_IN = B"101") else
+                "00001" when ADDRESS = B"1011011_0011" and (NATIONAL_OPTION_IN = B"101") else
+                "01111" when ADDRESS = B"1011011_0100" and (NATIONAL_OPTION_IN = B"101") else
+                "10001" when ADDRESS = B"1011011_0101" and (NATIONAL_OPTION_IN = B"101") else
+                "01111" when ADDRESS = B"1011011_0110" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1011011_0111" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1011011_1000" and (NATIONAL_OPTION_IN = B"101") else
+                -- Czech/Slovak
+                "00101" when ADDRESS = B"1011011_0000" and (NATIONAL_OPTION_IN = B"110") else
+                "00010" when ADDRESS = B"1011011_0001" and (NATIONAL_OPTION_IN = B"110") else
+                "01000" when ADDRESS = B"1011011_0010" and (NATIONAL_OPTION_IN = B"110") else
+                "11100" when ADDRESS = B"1011011_0011" and (NATIONAL_OPTION_IN = B"110") else
+                "01000" when ADDRESS = B"1011011_0100" and (NATIONAL_OPTION_IN = B"110") else
+                "01000" when ADDRESS = B"1011011_0101" and (NATIONAL_OPTION_IN = B"110") else
+                "00100" when ADDRESS = B"1011011_0110" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1011011_0111" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1011011_1000" and (NATIONAL_OPTION_IN = B"110") else
+                -- Character 5C
+                -- English
+                "01000" when ADDRESS = B"1011100_0000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "11000" when ADDRESS = B"1011100_0001" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "01000" when ADDRESS = B"1011100_0010" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "01000" when ADDRESS = B"1011100_0011" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "01010" when ADDRESS = B"1011100_0100" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00101" when ADDRESS = B"1011100_0101" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00001" when ADDRESS = B"1011100_0110" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00010" when ADDRESS = B"1011100_0111" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00101" when ADDRESS = B"1011100_1000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                -- German, Swedish/Finnish
+                "10001" when ADDRESS = B"1011100_0000" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1011100_0001" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "01110" when ADDRESS = B"1011100_0010" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1011100_0011" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1011100_0100" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1011100_0101" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "01110" when ADDRESS = B"1011100_0110" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1011100_0111" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1011100_1000" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                -- Italian
+                "00000" when ADDRESS = B"1011100_0000" and (NATIONAL_OPTION_IN = B"011") else
+                "00000" when ADDRESS = B"1011100_0001" and (NATIONAL_OPTION_IN = B"011") else
+                "01111" when ADDRESS = B"1011100_0010" and (NATIONAL_OPTION_IN = B"011") else
+                "10000" when ADDRESS = B"1011100_0011" and (NATIONAL_OPTION_IN = B"011") else
+                "10000" when ADDRESS = B"1011100_0100" and (NATIONAL_OPTION_IN = B"011") else
+                "10000" when ADDRESS = B"1011100_0101" and (NATIONAL_OPTION_IN = B"011") else
+                "01111" when ADDRESS = B"1011100_0110" and (NATIONAL_OPTION_IN = B"011") else
+                "00100" when ADDRESS = B"1011100_0111" and (NATIONAL_OPTION_IN = B"011") else
+                "01000" when ADDRESS = B"1011100_1000" and (NATIONAL_OPTION_IN = B"011") else
+                -- French
+                "00100" when ADDRESS = B"1011100_0000" and (NATIONAL_OPTION_IN = B"100") else
+                "01010" when ADDRESS = B"1011100_0001" and (NATIONAL_OPTION_IN = B"100") else
+                "01110" when ADDRESS = B"1011100_0010" and (NATIONAL_OPTION_IN = B"100") else
+                "10001" when ADDRESS = B"1011100_0011" and (NATIONAL_OPTION_IN = B"100") else
+                "11111" when ADDRESS = B"1011100_0100" and (NATIONAL_OPTION_IN = B"100") else
+                "10000" when ADDRESS = B"1011100_0101" and (NATIONAL_OPTION_IN = B"100") else
+                "01110" when ADDRESS = B"1011100_0110" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1011100_0111" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1011100_1000" and (NATIONAL_OPTION_IN = B"100") else
+                -- Portuguese/Spanish
+                "00010" when ADDRESS = B"1011100_0000" and (NATIONAL_OPTION_IN = B"101") else
+                "00100" when ADDRESS = B"1011100_0001" and (NATIONAL_OPTION_IN = B"101") else
+                "01110" when ADDRESS = B"1011100_0010" and (NATIONAL_OPTION_IN = B"101") else
+                "10001" when ADDRESS = B"1011100_0011" and (NATIONAL_OPTION_IN = B"101") else
+                "11111" when ADDRESS = B"1011100_0100" and (NATIONAL_OPTION_IN = B"101") else
+                "10000" when ADDRESS = B"1011100_0101" and (NATIONAL_OPTION_IN = B"101") else
+                "01110" when ADDRESS = B"1011100_0110" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1011100_0111" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1011100_1000" and (NATIONAL_OPTION_IN = B"101") else
+                -- Czech/Slovak
+                "01010" when ADDRESS = B"1011100_0000" and (NATIONAL_OPTION_IN = B"110") else
+                "00100" when ADDRESS = B"1011100_0001" and (NATIONAL_OPTION_IN = B"110") else
+                "11111" when ADDRESS = B"1011100_0010" and (NATIONAL_OPTION_IN = B"110") else
+                "00010" when ADDRESS = B"1011100_0011" and (NATIONAL_OPTION_IN = B"110") else
+                "00100" when ADDRESS = B"1011100_0100" and (NATIONAL_OPTION_IN = B"110") else
+                "01000" when ADDRESS = B"1011100_0101" and (NATIONAL_OPTION_IN = B"110") else
+                "11111" when ADDRESS = B"1011100_0110" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1011100_0111" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1011100_1000" and (NATIONAL_OPTION_IN = B"110") else
+                -- Character 0x5D
+                -- English, Italian
+                "00000" when ADDRESS = B"1011101_0000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "00100" when ADDRESS = B"1011101_0001" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "00010" when ADDRESS = B"1011101_0010" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "11111" when ADDRESS = B"1011101_0011" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "00010" when ADDRESS = B"1011101_0100" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "00100" when ADDRESS = B"1011101_0101" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1011101_0110" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1011101_0111" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1011101_1000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                -- German
+                "10001" when ADDRESS = B"1011101_0000" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1011101_0001" and (NATIONAL_OPTION_IN = B"001") else
+                "10001" when ADDRESS = B"1011101_0010" and (NATIONAL_OPTION_IN = B"001") else
+                "10001" when ADDRESS = B"1011101_0011" and (NATIONAL_OPTION_IN = B"001") else
+                "10001" when ADDRESS = B"1011101_0100" and (NATIONAL_OPTION_IN = B"001") else
+                "10001" when ADDRESS = B"1011101_0101" and (NATIONAL_OPTION_IN = B"001") else
+                "01110" when ADDRESS = B"1011101_0110" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1011101_0111" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1011101_1000" and (NATIONAL_OPTION_IN = B"001") else
+                -- Swedish/Finnish
+                "00100" when ADDRESS = B"1011101_0000" and (NATIONAL_OPTION_IN = B"010") else
+                "01010" when ADDRESS = B"1011101_0001" and (NATIONAL_OPTION_IN = B"010") else
+                "00100" when ADDRESS = B"1011101_0010" and (NATIONAL_OPTION_IN = B"010") else
+                "01110" when ADDRESS = B"1011101_0011" and (NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1011101_0100" and (NATIONAL_OPTION_IN = B"010") else
+                "11111" when ADDRESS = B"1011101_0101" and (NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1011101_0110" and (NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1011101_0111" and (NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1011101_1000" and (NATIONAL_OPTION_IN = B"010") else
+                -- French
+                "01000" when ADDRESS = B"1011101_0000" and (NATIONAL_OPTION_IN = B"100") else
+                "00100" when ADDRESS = B"1011101_0001" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1011101_0010" and (NATIONAL_OPTION_IN = B"100") else
+                "10001" when ADDRESS = B"1011101_0011" and (NATIONAL_OPTION_IN = B"100") else
+                "10001" when ADDRESS = B"1011101_0100" and (NATIONAL_OPTION_IN = B"100") else
+                "10001" when ADDRESS = B"1011101_0101" and (NATIONAL_OPTION_IN = B"100") else
+                "01111" when ADDRESS = B"1011101_0110" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1011101_0111" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1011101_1000" and (NATIONAL_OPTION_IN = B"100") else
+                -- Portuguese/Spanish
+                "00010" when ADDRESS = B"1011101_0000" and (NATIONAL_OPTION_IN = B"101") else
+                "00100" when ADDRESS = B"1011101_0001" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1011101_0010" and (NATIONAL_OPTION_IN = B"101") else
+                "00100" when ADDRESS = B"1011101_0011" and (NATIONAL_OPTION_IN = B"101") else
+                "00100" when ADDRESS = B"1011101_0100" and (NATIONAL_OPTION_IN = B"101") else
+                "00100" when ADDRESS = B"1011101_0101" and (NATIONAL_OPTION_IN = B"101") else
+                "00100" when ADDRESS = B"1011101_0110" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1011101_0111" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1011101_1000" and (NATIONAL_OPTION_IN = B"101") else
+                -- Czech/Slovak
+                "00010" when ADDRESS = B"1011101_0000" and (NATIONAL_OPTION_IN = B"110") else
+                "00100" when ADDRESS = B"1011101_0001" and (NATIONAL_OPTION_IN = B"110") else
+                "10001" when ADDRESS = B"1011101_0010" and (NATIONAL_OPTION_IN = B"110") else
+                "10001" when ADDRESS = B"1011101_0011" and (NATIONAL_OPTION_IN = B"110") else
+                "10001" when ADDRESS = B"1011101_0100" and (NATIONAL_OPTION_IN = B"110") else
+                "10001" when ADDRESS = B"1011101_0101" and (NATIONAL_OPTION_IN = B"110") else
+                "01111" when ADDRESS = B"1011101_0110" and (NATIONAL_OPTION_IN = B"110") else
+                "00001" when ADDRESS = B"1011101_0111" and (NATIONAL_OPTION_IN = B"110") else
+                "00111" when ADDRESS = B"1011101_1000" and (NATIONAL_OPTION_IN = B"110") else
+                -- Character 0x5E
+                -- English, Italian
+                "00100" when ADDRESS = B"1011110_0000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "01110" when ADDRESS = B"1011110_0001" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "10101" when ADDRESS = B"1011110_0010" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "00100" when ADDRESS = B"1011110_0011" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "00100" when ADDRESS = B"1011110_0100" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "00100" when ADDRESS = B"1011110_0101" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "00100" when ADDRESS = B"1011110_0110" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1011110_0111" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1011110_1000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"111") else
+                -- German
+                "00100" when ADDRESS = B"1011110_0000" and (NATIONAL_OPTION_IN = B"001") else
+                "01010" when ADDRESS = B"1011110_0001" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1011110_0010" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1011110_0011" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1011110_0100" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1011110_0101" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1011110_0110" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1011110_0111" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1011110_1000" and (NATIONAL_OPTION_IN = B"001") else
+                -- Swedish/Finnish
+                "10001" when ADDRESS = B"1011110_0000" and (NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1011110_0001" and (NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1011110_0010" and (NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1011110_0011" and (NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1011110_0100" and (NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1011110_0101" and (NATIONAL_OPTION_IN = B"010") else
+                "01110" when ADDRESS = B"1011110_0110" and (NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1011110_0111" and (NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1011110_1000" and (NATIONAL_OPTION_IN = B"010") else
+                -- French
+                "00100" when ADDRESS = B"1011110_0000" and (NATIONAL_OPTION_IN = B"100") else
+                "01010" when ADDRESS = B"1011110_0001" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1011110_0010" and (NATIONAL_OPTION_IN = B"100") else
+                "00100" when ADDRESS = B"1011110_0011" and (NATIONAL_OPTION_IN = B"100") else
+                "00100" when ADDRESS = B"1011110_0100" and (NATIONAL_OPTION_IN = B"100") else
+                "00100" when ADDRESS = B"1011110_0101" and (NATIONAL_OPTION_IN = B"100") else
+                "00100" when ADDRESS = B"1011110_0110" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1011110_0111" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1011110_1000" and (NATIONAL_OPTION_IN = B"100") else
+                -- Portuguese/Spanish
+                "00010" when ADDRESS = B"1011110_0000" and (NATIONAL_OPTION_IN = B"101") else
+                "00100" when ADDRESS = B"1011110_0001" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1011110_0010" and (NATIONAL_OPTION_IN = B"101") else
+                "01110" when ADDRESS = B"1011110_0011" and (NATIONAL_OPTION_IN = B"101") else
+                "10001" when ADDRESS = B"1011110_0100" and (NATIONAL_OPTION_IN = B"101") else
+                "10001" when ADDRESS = B"1011110_0101" and (NATIONAL_OPTION_IN = B"101") else
+                "01110" when ADDRESS = B"1011110_0110" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1011110_0111" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1011110_1000" and (NATIONAL_OPTION_IN = B"101") else
+                -- Czech/Slovak
+                "00010" when ADDRESS = B"1011110_0000" and (NATIONAL_OPTION_IN = B"110") else
+                "00100" when ADDRESS = B"1011110_0001" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1011110_0010" and (NATIONAL_OPTION_IN = B"110") else
+                "00100" when ADDRESS = B"1011110_0011" and (NATIONAL_OPTION_IN = B"110") else
+                "00100" when ADDRESS = B"1011110_0100" and (NATIONAL_OPTION_IN = B"110") else
+                "00100" when ADDRESS = B"1011110_0101" and (NATIONAL_OPTION_IN = B"110") else
+                "00100" when ADDRESS = B"1011110_0110" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1011110_0111" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1011110_1000" and (NATIONAL_OPTION_IN = B"110") else
+                -- Character 0x5F
+                -- English, Italian, French
+                "01010" when ADDRESS = B"1011111_0000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"100" or NATIONAL_OPTION_IN = B"111") else
+                "11111" when ADDRESS = B"1011111_0001" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"100" or NATIONAL_OPTION_IN = B"111") else
+                "01010" when ADDRESS = B"1011111_0010" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"100" or NATIONAL_OPTION_IN = B"111") else
+                "01010" when ADDRESS = B"1011111_0011" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"100" or NATIONAL_OPTION_IN = B"111") else
+                "01010" when ADDRESS = B"1011111_0100" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"100" or NATIONAL_OPTION_IN = B"111") else
+                "11111" when ADDRESS = B"1011111_0101" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"100" or NATIONAL_OPTION_IN = B"111") else
+                "01010" when ADDRESS = B"1011111_0110" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"100" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1011111_0111" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"100" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1011111_1000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"100" or NATIONAL_OPTION_IN = B"111") else
+                -- German, Swedish/Finnish
+                "00000" when ADDRESS = B"1011111_0000" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1011111_0001" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1011111_0010" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1011111_0011" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1011111_0100" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1011111_0101" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1011111_0110" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1011111_0111" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "11111" when ADDRESS = B"1011111_1000" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                -- Portuguese/Spanish
+                "00010" when ADDRESS = B"1011111_0000" and (NATIONAL_OPTION_IN = B"101") else
+                "00100" when ADDRESS = B"1011111_0001" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1011111_0010" and (NATIONAL_OPTION_IN = B"101") else
+                "10001" when ADDRESS = B"1011111_0011" and (NATIONAL_OPTION_IN = B"101") else
+                "10001" when ADDRESS = B"1011111_0100" and (NATIONAL_OPTION_IN = B"101") else
+                "10001" when ADDRESS = B"1011111_0101" and (NATIONAL_OPTION_IN = B"101") else
+                "01111" when ADDRESS = B"1011111_0110" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1011111_0111" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1011111_1000" and (NATIONAL_OPTION_IN = B"101") else
+                -- Czech/Slovak
+                "01010" when ADDRESS = B"1011111_0000" and (NATIONAL_OPTION_IN = B"110") else
+                "00100" when ADDRESS = B"1011111_0001" and (NATIONAL_OPTION_IN = B"110") else
+                "01011" when ADDRESS = B"1011111_0010" and (NATIONAL_OPTION_IN = B"110") else
+                "01100" when ADDRESS = B"1011111_0011" and (NATIONAL_OPTION_IN = B"110") else
+                "01000" when ADDRESS = B"1011111_0100" and (NATIONAL_OPTION_IN = B"110") else
+                "01000" when ADDRESS = B"1011111_0101" and (NATIONAL_OPTION_IN = B"110") else
+                "01000" when ADDRESS = B"1011111_0110" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1011111_0111" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1011111_1000" and (NATIONAL_OPTION_IN = B"110") else
                 
-                "00000" when ADDRESS = B"1011011_0000" else
-                "00100" when ADDRESS = B"1011011_0001" else
-                "01000" when ADDRESS = B"1011011_0010" else
-                "11111" when ADDRESS = B"1011011_0011" else
-                "01000" when ADDRESS = B"1011011_0100" else
-                "00100" when ADDRESS = B"1011011_0101" else
-                "00000" when ADDRESS = B"1011011_0110" else
-                "00000" when ADDRESS = B"1011011_0111" else
-                "00000" when ADDRESS = B"1011011_1000" else
-                
-                "01000" when ADDRESS = B"1011100_0000" else
-                "11000" when ADDRESS = B"1011100_0001" else
-                "01000" when ADDRESS = B"1011100_0010" else
-                "01000" when ADDRESS = B"1011100_0011" else
-                "01010" when ADDRESS = B"1011100_0100" else
-                "00101" when ADDRESS = B"1011100_0101" else
-                "00001" when ADDRESS = B"1011100_0110" else
-                "00010" when ADDRESS = B"1011100_0111" else
-                "00101" when ADDRESS = B"1011100_1000" else
-                
-                "00000" when ADDRESS = B"1011101_0000" else
-                "00100" when ADDRESS = B"1011101_0001" else
-                "00010" when ADDRESS = B"1011101_0010" else
-                "11111" when ADDRESS = B"1011101_0011" else
-                "00010" when ADDRESS = B"1011101_0100" else
-                "00100" when ADDRESS = B"1011101_0101" else
-                "00000" when ADDRESS = B"1011101_0110" else
-                "00000" when ADDRESS = B"1011101_0111" else
-                "00000" when ADDRESS = B"1011101_1000" else
-                
-                "00100" when ADDRESS = B"1011110_0000" else
-                "01110" when ADDRESS = B"1011110_0001" else
-                "10101" when ADDRESS = B"1011110_0010" else
-                "00100" when ADDRESS = B"1011110_0011" else
-                "00100" when ADDRESS = B"1011110_0100" else
-                "00100" when ADDRESS = B"1011110_0101" else
-                "00100" when ADDRESS = B"1011110_0110" else
-                "00000" when ADDRESS = B"1011110_0111" else
-                "00000" when ADDRESS = B"1011110_1000" else
-                
-                "01010" when ADDRESS = B"1011111_0000" else
-                "11111" when ADDRESS = B"1011111_0001" else
-                "01010" when ADDRESS = B"1011111_0010" else
-                "01010" when ADDRESS = B"1011111_0011" else
-                "01010" when ADDRESS = B"1011111_0100" else
-                "11111" when ADDRESS = B"1011111_0101" else
-                "01010" when ADDRESS = B"1011111_0110" else
-                "00000" when ADDRESS = B"1011111_0111" else
-                "00000" when ADDRESS = B"1011111_1000" else
-                
-                
-                "00000" when ADDRESS = B"1100000_0000" else
-                "00000" when ADDRESS = B"1100000_0001" else
-                "00000" when ADDRESS = B"1100000_0010" else
-                "11111" when ADDRESS = B"1100000_0011" else
-                "00000" when ADDRESS = B"1100000_0100" else
-                "00000" when ADDRESS = B"1100000_0101" else
-                "00000" when ADDRESS = B"1100000_0110" else
-                "00000" when ADDRESS = B"1100000_0111" else
-                "00000" when ADDRESS = B"1100000_1000" else
+                -- Character 0x60
+                -- English
+                "00000" when ADDRESS = B"1100000_0000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1100000_0001" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1100000_0010" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "11111" when ADDRESS = B"1100000_0011" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1100000_0100" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1100000_0101" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1100000_0110" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1100000_0111" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1100000_1000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                -- German
+                "00100" when ADDRESS = B"1100000_0000" and (NATIONAL_OPTION_IN = B"001") else
+                "01010" when ADDRESS = B"1100000_0001" and (NATIONAL_OPTION_IN = B"001") else
+                "00100" when ADDRESS = B"1100000_0010" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1100000_0011" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1100000_0100" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1100000_0101" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1100000_0110" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1100000_0111" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1100000_1000" and (NATIONAL_OPTION_IN = B"001") else
+                -- Swedish/Finnish, Czech/Slovak
+                "00010" when ADDRESS = B"1100000_0000" and (NATIONAL_OPTION_IN = B"010" or NATIONAL_OPTION_IN = B"110") else
+                "00100" when ADDRESS = B"1100000_0001" and (NATIONAL_OPTION_IN = B"010" or NATIONAL_OPTION_IN = B"110") else
+                "01110" when ADDRESS = B"1100000_0010" and (NATIONAL_OPTION_IN = B"010" or NATIONAL_OPTION_IN = B"110") else
+                "10001" when ADDRESS = B"1100000_0011" and (NATIONAL_OPTION_IN = B"010" or NATIONAL_OPTION_IN = B"110") else
+                "11111" when ADDRESS = B"1100000_0100" and (NATIONAL_OPTION_IN = B"010" or NATIONAL_OPTION_IN = B"110") else
+                "10000" when ADDRESS = B"1100000_0101" and (NATIONAL_OPTION_IN = B"010" or NATIONAL_OPTION_IN = B"110") else
+                "01110" when ADDRESS = B"1100000_0110" and (NATIONAL_OPTION_IN = B"010" or NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1100000_0111" and (NATIONAL_OPTION_IN = B"010" or NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1100000_1000" and (NATIONAL_OPTION_IN = B"010" or NATIONAL_OPTION_IN = B"110") else
+                -- Italian
+                "01000" when ADDRESS = B"1100000_0000" and (NATIONAL_OPTION_IN = B"011") else
+                "00100" when ADDRESS = B"1100000_0001" and (NATIONAL_OPTION_IN = B"011") else
+                "00000" when ADDRESS = B"1100000_0010" and (NATIONAL_OPTION_IN = B"011") else
+                "10001" when ADDRESS = B"1100000_0011" and (NATIONAL_OPTION_IN = B"011") else
+                "10001" when ADDRESS = B"1100000_0100" and (NATIONAL_OPTION_IN = B"011") else
+                "10001" when ADDRESS = B"1100000_0101" and (NATIONAL_OPTION_IN = B"011") else
+                "01111" when ADDRESS = B"1100000_0110" and (NATIONAL_OPTION_IN = B"011") else
+                "00000" when ADDRESS = B"1100000_0111" and (NATIONAL_OPTION_IN = B"011") else
+                "00000" when ADDRESS = B"1100000_1000" and (NATIONAL_OPTION_IN = B"011") else
+                -- French
+                "01000" when ADDRESS = B"1100000_0000" and (NATIONAL_OPTION_IN = B"100") else
+                "00100" when ADDRESS = B"1100000_0001" and (NATIONAL_OPTION_IN = B"100") else
+                "01110" when ADDRESS = B"1100000_0010" and (NATIONAL_OPTION_IN = B"100") else
+                "10001" when ADDRESS = B"1100000_0011" and (NATIONAL_OPTION_IN = B"100") else
+                "11111" when ADDRESS = B"1100000_0100" and (NATIONAL_OPTION_IN = B"100") else
+                "10000" when ADDRESS = B"1100000_0101" and (NATIONAL_OPTION_IN = B"100") else
+                "01110" when ADDRESS = B"1100000_0110" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1100000_0111" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1100000_1000" and (NATIONAL_OPTION_IN = B"100") else
+                -- Portuguese/Spanish
+                "00100" when ADDRESS = B"1100000_0000" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1100000_0001" and (NATIONAL_OPTION_IN = B"101") else
+                "00100" when ADDRESS = B"1100000_0010" and (NATIONAL_OPTION_IN = B"101") else
+                "01000" when ADDRESS = B"1100000_0011" and (NATIONAL_OPTION_IN = B"101") else
+                "10000" when ADDRESS = B"1100000_0100" and (NATIONAL_OPTION_IN = B"101") else
+                "10001" when ADDRESS = B"1100000_0101" and (NATIONAL_OPTION_IN = B"101") else
+                "01110" when ADDRESS = B"1100000_0110" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1100000_0111" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1100000_1000" and (NATIONAL_OPTION_IN = B"101") else
                 
                 "00000" when ADDRESS = B"1100001_0000" else
                 "00000" when ADDRESS = B"1100001_0001" else
@@ -934,46 +1355,260 @@ begin
                 "11111" when ADDRESS = B"1111010_0110" else
                 "00000" when ADDRESS = B"1111010_0111" else
                 "00000" when ADDRESS = B"1111010_1000" else
-                
-                "01000" when ADDRESS = B"1111011_0000" else
-                "11000" when ADDRESS = B"1111011_0001" else
-                "01000" when ADDRESS = B"1111011_0010" else
-                "01000" when ADDRESS = B"1111011_0011" else
-                "00001" when ADDRESS = B"1111011_0100" else
-                "00011" when ADDRESS = B"1111011_0101" else
-                "00101" when ADDRESS = B"1111011_0110" else
-                "01111" when ADDRESS = B"1111011_0111" else
-                "00001" when ADDRESS = B"1111011_1000" else
-                
-                "11011" when ADDRESS = B"1111100_0000" else
-                "11011" when ADDRESS = B"1111100_0001" else
-                "11011" when ADDRESS = B"1111100_0010" else
-                "11011" when ADDRESS = B"1111100_0011" else
-                "11011" when ADDRESS = B"1111100_0100" else
-                "11011" when ADDRESS = B"1111100_0101" else
-                "11011" when ADDRESS = B"1111100_0110" else
-                "00000" when ADDRESS = B"1111100_0111" else
-                "00000" when ADDRESS = B"1111100_1000" else
-                
-                "11000" when ADDRESS = B"1111101_0000" else
-                "00100" when ADDRESS = B"1111101_0001" else
-                "11000" when ADDRESS = B"1111101_0010" else
-                "00100" when ADDRESS = B"1111101_0011" else
-                "11001" when ADDRESS = B"1111101_0100" else
-                "00011" when ADDRESS = B"1111101_0101" else
-                "00101" when ADDRESS = B"1111101_0110" else
-                "01111" when ADDRESS = B"1111101_0111" else
-                "00001" when ADDRESS = B"1111101_1000" else
-                
-                "00000" when ADDRESS = B"1111110_0000" else
-                "00100" when ADDRESS = B"1111110_0001" else
-                "00000" when ADDRESS = B"1111110_0010" else
-                "11111" when ADDRESS = B"1111110_0011" else
-                "00000" when ADDRESS = B"1111110_0100" else
-                "00100" when ADDRESS = B"1111110_0101" else
-                "00000" when ADDRESS = B"1111110_0110" else
-                "00000" when ADDRESS = B"1111110_0111" else
-                "00000" when ADDRESS = B"1111110_1000" else
+                -- Character 0x7B
+                -- English
+                "01000" when ADDRESS = B"1111011_0000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "11000" when ADDRESS = B"1111011_0001" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "01000" when ADDRESS = B"1111011_0010" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "01000" when ADDRESS = B"1111011_0011" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00001" when ADDRESS = B"1111011_0100" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00011" when ADDRESS = B"1111011_0101" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00101" when ADDRESS = B"1111011_0110" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "01111" when ADDRESS = B"1111011_0111" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00001" when ADDRESS = B"1111011_1000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                -- German, Swedish/Finnish
+                "10001" when ADDRESS = B"1111011_0000" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1111011_0001" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "01110" when ADDRESS = B"1111011_0010" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "00001" when ADDRESS = B"1111011_0011" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "01111" when ADDRESS = B"1111011_0100" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1111011_0101" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "01111" when ADDRESS = B"1111011_0110" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1111011_0111" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1111011_1000" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                -- Italian
+                "01000" when ADDRESS = B"1111011_0000" and (NATIONAL_OPTION_IN = B"011") else
+                "00100" when ADDRESS = B"1111011_0001" and (NATIONAL_OPTION_IN = B"011") else
+                "01110" when ADDRESS = B"1111011_0010" and (NATIONAL_OPTION_IN = B"011") else
+                "00001" when ADDRESS = B"1111011_0011" and (NATIONAL_OPTION_IN = B"011") else
+                "01111" when ADDRESS = B"1111011_0100" and (NATIONAL_OPTION_IN = B"011") else
+                "10001" when ADDRESS = B"1111011_0101" and (NATIONAL_OPTION_IN = B"011") else
+                "01111" when ADDRESS = B"1111011_0110" and (NATIONAL_OPTION_IN = B"011") else
+                "00000" when ADDRESS = B"1111011_0111" and (NATIONAL_OPTION_IN = B"011") else
+                "00000" when ADDRESS = B"1111011_1000" and (NATIONAL_OPTION_IN = B"011") else
+                -- French
+                "00100" when ADDRESS = B"1111011_0000" and (NATIONAL_OPTION_IN = B"100") else
+                "01010" when ADDRESS = B"1111011_0001" and (NATIONAL_OPTION_IN = B"100") else
+                "01110" when ADDRESS = B"1111011_0010" and (NATIONAL_OPTION_IN = B"100") else
+                "00001" when ADDRESS = B"1111011_0011" and (NATIONAL_OPTION_IN = B"100") else
+                "01111" when ADDRESS = B"1111011_0100" and (NATIONAL_OPTION_IN = B"100") else
+                "10001" when ADDRESS = B"1111011_0101" and (NATIONAL_OPTION_IN = B"100") else
+                "01111" when ADDRESS = B"1111011_0110" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1111011_0111" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1111011_1000" and (NATIONAL_OPTION_IN = B"100") else
+                -- Portuguese/Spanish
+                "00000" when ADDRESS = B"1111011_0000" and (NATIONAL_OPTION_IN = B"101") else
+                "10001" when ADDRESS = B"1111011_0001" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1111011_0010" and (NATIONAL_OPTION_IN = B"101") else
+                "10001" when ADDRESS = B"1111011_0011" and (NATIONAL_OPTION_IN = B"101") else
+                "10001" when ADDRESS = B"1111011_0100" and (NATIONAL_OPTION_IN = B"101") else
+                "10001" when ADDRESS = B"1111011_0101" and (NATIONAL_OPTION_IN = B"101") else
+                "01111" when ADDRESS = B"1111011_0110" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1111011_0111" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1111011_1000" and (NATIONAL_OPTION_IN = B"101") else
+                -- Czech/Slovak
+                "00010" when ADDRESS = B"1111011_0000" and (NATIONAL_OPTION_IN = B"110") else
+                "00100" when ADDRESS = B"1111011_0001" and (NATIONAL_OPTION_IN = B"110") else
+                "01110" when ADDRESS = B"1111011_0010" and (NATIONAL_OPTION_IN = B"110") else
+                "00001" when ADDRESS = B"1111011_0011" and (NATIONAL_OPTION_IN = B"110") else
+                "01111" when ADDRESS = B"1111011_0100" and (NATIONAL_OPTION_IN = B"110") else
+                "10001" when ADDRESS = B"1111011_0101" and (NATIONAL_OPTION_IN = B"110") else
+                "01111" when ADDRESS = B"1111011_0110" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1111011_0111" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1111011_1000" and (NATIONAL_OPTION_IN = B"110") else
+                -- Character 0x7C
+                -- English
+                "11011" when ADDRESS = B"1111100_0000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "11011" when ADDRESS = B"1111100_0001" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "11011" when ADDRESS = B"1111100_0010" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "11011" when ADDRESS = B"1111100_0011" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "11011" when ADDRESS = B"1111100_0100" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "11011" when ADDRESS = B"1111100_0101" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "11011" when ADDRESS = B"1111100_0110" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1111100_0111" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1111100_1000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                -- German, Swedish/Finnish
+                "00000" when ADDRESS = B"1111100_0000" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1111100_0001" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1111100_0010" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "01110" when ADDRESS = B"1111100_0011" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1111100_0100" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1111100_0101" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "01110" when ADDRESS = B"1111100_0110" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1111100_0111" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1111100_1000" and (NATIONAL_OPTION_IN = B"001" or NATIONAL_OPTION_IN = B"010") else
+                -- Italian
+                "01000" when ADDRESS = B"1111100_0000" and (NATIONAL_OPTION_IN = B"011") else
+                "00100" when ADDRESS = B"1111100_0001" and (NATIONAL_OPTION_IN = B"011") else
+                "00000" when ADDRESS = B"1111100_0010" and (NATIONAL_OPTION_IN = B"011") else
+                "01110" when ADDRESS = B"1111100_0011" and (NATIONAL_OPTION_IN = B"011") else
+                "10001" when ADDRESS = B"1111100_0100" and (NATIONAL_OPTION_IN = B"011") else
+                "10001" when ADDRESS = B"1111100_0101" and (NATIONAL_OPTION_IN = B"011") else
+                "01110" when ADDRESS = B"1111100_0110" and (NATIONAL_OPTION_IN = B"011") else
+                "00000" when ADDRESS = B"1111100_0111" and (NATIONAL_OPTION_IN = B"011") else
+                "00000" when ADDRESS = B"1111100_1000" and (NATIONAL_OPTION_IN = B"011") else
+                -- French
+                "00100" when ADDRESS = B"1111100_0000" and (NATIONAL_OPTION_IN = B"100") else
+                "01010" when ADDRESS = B"1111100_0001" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1111100_0010" and (NATIONAL_OPTION_IN = B"100") else
+                "01110" when ADDRESS = B"1111100_0011" and (NATIONAL_OPTION_IN = B"100") else
+                "10001" when ADDRESS = B"1111100_0100" and (NATIONAL_OPTION_IN = B"100") else
+                "10001" when ADDRESS = B"1111100_0101" and (NATIONAL_OPTION_IN = B"100") else
+                "01110" when ADDRESS = B"1111100_0110" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1111100_0111" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1111100_1000" and (NATIONAL_OPTION_IN = B"100") else
+                -- Portuguese/Spanish
+                "01101" when ADDRESS = B"1111100_0000" and (NATIONAL_OPTION_IN = B"101") else
+                "10110" when ADDRESS = B"1111100_0001" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1111100_0010" and (NATIONAL_OPTION_IN = B"101") else
+                "01110" when ADDRESS = B"1111100_0011" and (NATIONAL_OPTION_IN = B"101") else
+                "01001" when ADDRESS = B"1111100_0100" and (NATIONAL_OPTION_IN = B"101") else
+                "01001" when ADDRESS = B"1111100_0101" and (NATIONAL_OPTION_IN = B"101") else
+                "01001" when ADDRESS = B"1111100_0110" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1111100_0111" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1111100_1000" and (NATIONAL_OPTION_IN = B"101") else
+                -- Czech/Slovak
+                "01010" when ADDRESS = B"1111100_0000" and (NATIONAL_OPTION_IN = B"110") else
+                "00100" when ADDRESS = B"1111100_0001" and (NATIONAL_OPTION_IN = B"110") else
+                "01110" when ADDRESS = B"1111100_0010" and (NATIONAL_OPTION_IN = B"110") else
+                "10001" when ADDRESS = B"1111100_0011" and (NATIONAL_OPTION_IN = B"110") else
+                "11111" when ADDRESS = B"1111100_0100" and (NATIONAL_OPTION_IN = B"110") else
+                "10000" when ADDRESS = B"1111100_0101" and (NATIONAL_OPTION_IN = B"110") else
+                "01110" when ADDRESS = B"1111100_0110" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1111100_0111" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1111100_1000" and (NATIONAL_OPTION_IN = B"110") else
+                -- Character 0x7D
+                -- English
+                "11000" when ADDRESS = B"1111101_0000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00100" when ADDRESS = B"1111101_0001" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "11000" when ADDRESS = B"1111101_0010" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00100" when ADDRESS = B"1111101_0011" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "11001" when ADDRESS = B"1111101_0100" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00011" when ADDRESS = B"1111101_0101" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00101" when ADDRESS = B"1111101_0110" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "01111" when ADDRESS = B"1111101_0111" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00001" when ADDRESS = B"1111101_1000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                -- German
+                "00000" when ADDRESS = B"1111101_0000" and (NATIONAL_OPTION_IN = B"001") else
+                "10001" when ADDRESS = B"1111101_0001" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1111101_0010" and (NATIONAL_OPTION_IN = B"001") else
+                "10001" when ADDRESS = B"1111101_0011" and (NATIONAL_OPTION_IN = B"001") else
+                "10001" when ADDRESS = B"1111101_0100" and (NATIONAL_OPTION_IN = B"001") else
+                "10001" when ADDRESS = B"1111101_0101" and (NATIONAL_OPTION_IN = B"001") else
+                "01111" when ADDRESS = B"1111101_0110" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1111101_0111" and (NATIONAL_OPTION_IN = B"001") else
+                "00000" when ADDRESS = B"1111101_1000" and (NATIONAL_OPTION_IN = B"001") else
+                -- Swedish/Finnish
+                "00100" when ADDRESS = B"1111101_0000" and (NATIONAL_OPTION_IN = B"010") else
+                "01010" when ADDRESS = B"1111101_0001" and (NATIONAL_OPTION_IN = B"010") else
+                "01110" when ADDRESS = B"1111101_0010" and (NATIONAL_OPTION_IN = B"010") else
+                "00001" when ADDRESS = B"1111101_0011" and (NATIONAL_OPTION_IN = B"010") else
+                "01111" when ADDRESS = B"1111101_0100" and (NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1111101_0101" and (NATIONAL_OPTION_IN = B"010") else
+                "01111" when ADDRESS = B"1111101_0110" and (NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1111101_0111" and (NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1111101_1000" and (NATIONAL_OPTION_IN = B"010") else
+                -- Italian, Portuguese/Spanish
+                "01000" when ADDRESS = B"1111101_0000" and (NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"101") else
+                "00100" when ADDRESS = B"1111101_0001" and (NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"101") else
+                "01110" when ADDRESS = B"1111101_0010" and (NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"101") else
+                "10001" when ADDRESS = B"1111101_0011" and (NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"101") else
+                "11111" when ADDRESS = B"1111101_0100" and (NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"101") else
+                "10000" when ADDRESS = B"1111101_0101" and (NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"101") else
+                "01110" when ADDRESS = B"1111101_0110" and (NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1111101_0111" and (NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1111101_1000" and (NATIONAL_OPTION_IN = B"011" or NATIONAL_OPTION_IN = B"101") else
+                -- French
+                "00100" when ADDRESS = B"1111101_0000" and (NATIONAL_OPTION_IN = B"100") else
+                "01010" when ADDRESS = B"1111101_0001" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1111101_0010" and (NATIONAL_OPTION_IN = B"100") else
+                "10001" when ADDRESS = B"1111101_0011" and (NATIONAL_OPTION_IN = B"100") else
+                "10001" when ADDRESS = B"1111101_0100" and (NATIONAL_OPTION_IN = B"100") else
+                "10001" when ADDRESS = B"1111101_0101" and (NATIONAL_OPTION_IN = B"100") else
+                "01111" when ADDRESS = B"1111101_0110" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1111101_0111" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1111101_1000" and (NATIONAL_OPTION_IN = B"100") else
+                -- Czech/Slovak
+                "00010" when ADDRESS = B"1111101_0000" and (NATIONAL_OPTION_IN = B"110") else
+                "00100" when ADDRESS = B"1111101_0001" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1111101_0010" and (NATIONAL_OPTION_IN = B"110") else
+                "10001" when ADDRESS = B"1111101_0011" and (NATIONAL_OPTION_IN = B"110") else
+                "10001" when ADDRESS = B"1111101_0100" and (NATIONAL_OPTION_IN = B"110") else
+                "10001" when ADDRESS = B"1111101_0101" and (NATIONAL_OPTION_IN = B"110") else
+                "01111" when ADDRESS = B"1111101_0110" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1111101_0111" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1111101_1000" and (NATIONAL_OPTION_IN = B"110") else
+                -- Character 0x7E
+                -- English
+                "00000" when ADDRESS = B"1111110_0000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00100" when ADDRESS = B"1111110_0001" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1111110_0010" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "11111" when ADDRESS = B"1111110_0011" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1111110_0100" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00100" when ADDRESS = B"1111110_0101" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1111110_0110" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1111110_0111" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                "00000" when ADDRESS = B"1111110_1000" and (NATIONAL_OPTION_IN = B"000" or NATIONAL_OPTION_IN = B"111") else
+                -- German
+                "01100" when ADDRESS = B"1111110_0000" and (NATIONAL_OPTION_IN = B"001") else
+                "10010" when ADDRESS = B"1111110_0001" and (NATIONAL_OPTION_IN = B"001") else
+                "10010" when ADDRESS = B"1111110_0010" and (NATIONAL_OPTION_IN = B"001") else
+                "10110" when ADDRESS = B"1111110_0011" and (NATIONAL_OPTION_IN = B"001") else
+                "10001" when ADDRESS = B"1111110_0100" and (NATIONAL_OPTION_IN = B"001") else
+                "10001" when ADDRESS = B"1111110_0101" and (NATIONAL_OPTION_IN = B"001") else
+                "10110" when ADDRESS = B"1111110_0110" and (NATIONAL_OPTION_IN = B"001") else
+                "10000" when ADDRESS = B"1111110_0111" and (NATIONAL_OPTION_IN = B"001") else
+                "10000" when ADDRESS = B"1111110_1000" and (NATIONAL_OPTION_IN = B"001") else
+                -- Swedish/Finnish
+                "00000" when ADDRESS = B"1111110_0000" and (NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1111110_0001" and (NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1111110_0010" and (NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1111110_0011" and (NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1111110_0100" and (NATIONAL_OPTION_IN = B"010") else
+                "10001" when ADDRESS = B"1111110_0101" and (NATIONAL_OPTION_IN = B"010") else
+                "01111" when ADDRESS = B"1111110_0110" and (NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1111110_0111" and (NATIONAL_OPTION_IN = B"010") else
+                "00000" when ADDRESS = B"1111110_1000" and (NATIONAL_OPTION_IN = B"010") else
+                -- Italian
+                "01000" when ADDRESS = B"1111110_0000" and (NATIONAL_OPTION_IN = B"011") else
+                "00100" when ADDRESS = B"1111110_0001" and (NATIONAL_OPTION_IN = B"011") else
+                "00000" when ADDRESS = B"1111110_0010" and (NATIONAL_OPTION_IN = B"011") else
+                "00100" when ADDRESS = B"1111110_0011" and (NATIONAL_OPTION_IN = B"011") else
+                "00100" when ADDRESS = B"1111110_0100" and (NATIONAL_OPTION_IN = B"011") else
+                "00100" when ADDRESS = B"1111110_0101" and (NATIONAL_OPTION_IN = B"011") else
+                "00100" when ADDRESS = B"1111110_0110" and (NATIONAL_OPTION_IN = B"011") else
+                "00000" when ADDRESS = B"1111110_0111" and (NATIONAL_OPTION_IN = B"011") else
+                "00000" when ADDRESS = B"1111110_1000" and (NATIONAL_OPTION_IN = B"011") else
+                -- French
+                "00000" when ADDRESS = B"1111110_0000" and (NATIONAL_OPTION_IN = B"100") else
+                "00000" when ADDRESS = B"1111110_0001" and (NATIONAL_OPTION_IN = B"100") else
+                "01111" when ADDRESS = B"1111110_0010" and (NATIONAL_OPTION_IN = B"100") else
+                "10000" when ADDRESS = B"1111110_0011" and (NATIONAL_OPTION_IN = B"100") else
+                "10000" when ADDRESS = B"1111110_0100" and (NATIONAL_OPTION_IN = B"100") else
+                "10000" when ADDRESS = B"1111110_0101" and (NATIONAL_OPTION_IN = B"100") else
+                "01111" when ADDRESS = B"1111110_0110" and (NATIONAL_OPTION_IN = B"100") else
+                "00100" when ADDRESS = B"1111110_0111" and (NATIONAL_OPTION_IN = B"100") else
+                "01000" when ADDRESS = B"1111110_1000" and (NATIONAL_OPTION_IN = B"100") else
+                -- Portuguese/Spanish
+                "01000" when ADDRESS = B"1111110_0000" and (NATIONAL_OPTION_IN = B"101") else
+                "00100" when ADDRESS = B"1111110_0001" and (NATIONAL_OPTION_IN = B"101") else
+                "01110" when ADDRESS = B"1111110_0010" and (NATIONAL_OPTION_IN = B"101") else
+                "00001" when ADDRESS = B"1111110_0011" and (NATIONAL_OPTION_IN = B"101") else
+                "01111" when ADDRESS = B"1111110_0100" and (NATIONAL_OPTION_IN = B"101") else
+                "10001" when ADDRESS = B"1111110_0101" and (NATIONAL_OPTION_IN = B"101") else
+                "01111" when ADDRESS = B"1111110_0110" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1111110_0111" and (NATIONAL_OPTION_IN = B"101") else
+                "00000" when ADDRESS = B"1111110_1000" and (NATIONAL_OPTION_IN = B"101") else
+                -- Czech/Slovak
+                "01010" when ADDRESS = B"1111110_0000" and (NATIONAL_OPTION_IN = B"110") else
+                "00100" when ADDRESS = B"1111110_0001" and (NATIONAL_OPTION_IN = B"110") else
+                "01111" when ADDRESS = B"1111110_0010" and (NATIONAL_OPTION_IN = B"110") else
+                "10000" when ADDRESS = B"1111110_0011" and (NATIONAL_OPTION_IN = B"110") else
+                "01110" when ADDRESS = B"1111110_0100" and (NATIONAL_OPTION_IN = B"110") else
+                "00001" when ADDRESS = B"1111110_0101" and (NATIONAL_OPTION_IN = B"110") else
+                "11110" when ADDRESS = B"1111110_0110" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1111110_0111" and (NATIONAL_OPTION_IN = B"110") else
+                "00000" when ADDRESS = B"1111110_1000" and (NATIONAL_OPTION_IN = B"110") else
                 
                 "11111" when ADDRESS = B"1111111_0000" else
                 "11111" when ADDRESS = B"1111111_0001" else
