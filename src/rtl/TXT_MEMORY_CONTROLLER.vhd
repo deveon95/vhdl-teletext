@@ -28,6 +28,7 @@ entity TXT_MEMORY_CONTROLLER is
     MEM_ADDRESS_OUT  : out std_logic_vector(10 downto 0);
     MEM_WREN_OUT     : out std_logic;
     
+    
     REQ_MAGAZINE_IN  : in  std_logic_vector(2 downto 0);
     REQ_PAGE_IN      : in  std_logic_vector(7 downto 0);
     REQ_SUBCODE_IN   : in  std_logic_vector(12 downto 0);
@@ -40,6 +41,8 @@ entity TXT_MEMORY_CONTROLLER is
     YEL_PAGE_OUT     : out std_logic_vector(10 downto 0);
     BLU_PAGE_OUT     : out std_logic_vector(10 downto 0);
     IDX_PAGE_OUT     : out std_logic_vector(10 downto 0);
+    -- For language selection
+    NATIONAL_OPTION_OUT : out std_logic_vector(2 downto 0);
     
     STATUS_IN_1      : in  std_logic_vector(6 downto 0);
     STATUS_IN_2      : in  std_logic_vector(6 downto 0);
@@ -83,6 +86,7 @@ MAIN: process(CLK_27_750, RESET)
     begin
         if RESET = '1' then
             MEMORY_ERASE_REQUIRED <= '0';
+            NATIONAL_OPTION_OUT <= (others => '0');
             MEM_WREN <= '0';
             STATE <= WAIT_FOR_FRAME;
             MEM_DATA <= (others => '0');
@@ -124,6 +128,9 @@ MAIN: process(CLK_27_750, RESET)
                     else
                         MEMORY_ERASE_REQUIRED <= CONTROL_BITS_IN(0);
                     end if;
+                    NATIONAL_OPTION_OUT(0) <= CONTROL_BITS_IN(10);
+                    NATIONAL_OPTION_OUT(1) <= CONTROL_BITS_IN(9);
+                    NATIONAL_OPTION_OUT(2) <= CONTROL_BITS_IN(8);
                     LAST_LOADED_PAGE <= PAGE_IN;
                     LAST_LOADED_SUBCODE <= SUBCODE_IN;
                     LAST_LOADED_MAGAZINE <= MAGAZINE_IN;
@@ -350,7 +357,7 @@ MAIN: process(CLK_27_750, RESET)
     
     MEM_ADDRESS_OUT <= std_logic_vector(to_unsigned(ADDRESS_COUNTER, 11));
     
-    STATUS_ARRAY(0) <= "0000110";           -- 0000111 for Alpla White
+    STATUS_ARRAY(0) <= "0000111";           -- 0000111 for Alpla White
     STATUS_ARRAY(1) <= STATUS_IN_1;
     STATUS_ARRAY(2) <= STATUS_IN_2;
     STATUS_ARRAY(3) <= STATUS_IN_3;

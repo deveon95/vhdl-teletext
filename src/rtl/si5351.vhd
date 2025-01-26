@@ -23,7 +23,7 @@ entity SI5351 is
 end entity SI5351;
 
 architecture RTL of SI5351 is
--- Length of each bit in clock cycles (I2C speed of roughly 25kHz)
+-- Length of each bit in clock cycles (I2C speed of roughly 100kHz)
 constant SUBBIT_LENGTH : integer := 250;
 -- power-on delay
 constant INIT_LENGTH : integer := 100000;

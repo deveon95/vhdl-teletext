@@ -8,5 +8,6 @@ use_differential_mode=FALSE
 use_oe=FALSE
 use_termination_control=FALSE
 DEVICE_FAMILY="Cyclone 10 LP"
+CBX_AUTO_BLACKBOX=ALL
 datain
 dataout

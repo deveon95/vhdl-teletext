@@ -25,6 +25,7 @@ port (
     RESOLUTION_SELECT_IN : in std_logic;
     LEVEL_2_5_EN_IN : in std_logic;
     LEVEL_2_5_CLEAR_EN_IN : in std_logic;
+    NATIONAL_OPTION_IN : in std_logic_vector(2 downto 0);
     
     MEMORY_DATA_IN : in std_logic_vector(6 downto 0);
     MEMORY_ADDRESS_OUT : out std_logic_vector(10 downto 0);
@@ -536,6 +537,7 @@ FULL_ROW_COLOUR_PROCESS: process(CLK, RESET)
 CGROM: entity work.CGROM
     port map(
     ADDRESS_IN => CHAR_TO_DISPLAY,
+    NATIONAL_OPTION_IN => NATIONAL_OPTION_IN,
     ROW_SELECT_IN => std_logic_vector(to_unsigned(CHAR_ROW_SELECT - 1,4)),
     DATA_OUT => CGROM_LINE);
     
