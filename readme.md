@@ -16,6 +16,7 @@ Detailed descriptions of how the various modules work can be found on my blog - 
 * Reveal button displays and hides "concealed" page content
 * Page selection via number keys, up/down buttons, and Fastext keys
 * Level 2.5/3.5 store function for applying enhancements to Level 1.0 pages
+* Accepts teletext packets on any line of the TV picture (unlike most decoders) which means the `-f` flag may be used with raspi-teletext to enable full-field mode, which achieves a dramatic improvement in speed
 * NEW! Level 1 National option subsets implemented (foreign/accented characters) for English, German, Italian, French, Portuguese/Spanish, Czech/Slovak
 * Parameterised design enables design tweaks without any programming knowledge
 * No vendor-specific code (except dual port RAM, PLL and high-speed I/O buffers)
